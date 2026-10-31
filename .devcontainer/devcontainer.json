@@ -1,0 +1,54 @@
+{
+  "name": "bingo-app (Cloudflare Workers + OpenNext)",
+
+  // Debian(glibc)ベース。wrangler/workerd は Alpine(musl) では動かないため bookworm を使用
+  "image": "mcr.microsoft.com/devcontainers/typescript-node:1-22-bookworm",
+
+  "features": {
+    "ghcr.io/devcontainers/features/github-cli:1": {},
+    "ghcr.io/anthropics/devcontainer-features/claude-code:1": {}
+  },
+
+  "remoteUser": "node",
+
+  "containerEnv": {
+    // Claude Code の設定・ログイン情報（.claude.json 含む）をボリューム内にまとめる
+    "CLAUDE_CONFIG_DIR": "/home/node/.claude",
+    "WRANGLER_SEND_METRICS": "false",
+    "NEXT_TELEMETRY_DISABLED": "1"
+  },
+
+  // コンテナを作り直してもログイン状態・履歴が消えないよう名前付きボリュームで永続化
+  "mounts": [
+    "source=bingo-claude-config-${devcontainerId},target=/home/node/.claude,type=volume",
+    "source=bingo-wrangler-config-${devcontainerId},target=/home/node/.config/.wrangler,type=volume",
+    "source=bingo-bashhistory-${devcontainerId},target=/commandhistory,type=volume"
+  ],
+
+  "forwardPorts": [3000, 8787, 8976],
+  "portsAttributes": {
+    "3000": { "label": "next dev", "onAutoForward": "notify" },
+    "8787": { "label": "wrangler dev / opennext preview", "onAutoForward": "notify" },
+    "8976": { "label": "wrangler login callback", "onAutoForward": "silent" }
+  },
+
+  "postCreateCommand": "bash .devcontainer/post-create.sh",
+
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "anthropic.claude-code",
+        "dbaeumer.vscode-eslint",
+        "esbenp.prettier-vscode",
+        "bradlc.vscode-tailwindcss"
+      ],
+      "settings": {
+        "editor.formatOnSave": true,
+        "editor.defaultFormatter": "esbenp.prettier-vscode",
+        "editor.codeActionsOnSave": { "source.fixAll.eslint": "explicit" },
+        "typescript.tsdk": "node_modules/typescript/lib",
+        "terminal.integrated.defaultProfile.linux": "bash"
+      }
+    }
+  }
+}
