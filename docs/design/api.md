@@ -93,7 +93,7 @@ type RoomPublicState = {
 | `draw()` | — | `{ seq, number }` | `NOT_PLAYING` `COOLDOWN` `NO_NUMBERS_LEFT` | F-05 |
 | `finish()` | — | — | `NOT_PLAYING` | F-06 |
 | `issueCodes(count)` | 枚数（1〜） | 発行したコードの一覧 | `CODE_LIMIT`（合計150枚を超える） `ROOM_FINISHED` | F-02 |
-| `listCodes(filter)` | `"unused"` または `"all"` | コードと状態の一覧 | — | F-03 印刷 |
+| `listCodes(filter)` | `"unused"` または `"all"`（all でも無効のコードは除く） | コードと状態の一覧 | — | F-03 印刷 |
 | `getParticipantCode(participantId)` | 参加者 ID | 参加コード | `NOT_FOUND` | F-09 |
 | `removeParticipant(participantId)` | 参加者 ID | — | `NOT_FOUND` | F-08 |
 | `replaceParticipantCode(participantId)` | 参加者 ID | 新しい参加コード | `NOT_FOUND` `CODE_LIMIT` | F-11 |
@@ -116,6 +116,7 @@ RoomDirectory は1つだけ（名前は固定）。どのメソッドも、毎�
 | `deleteRoom(pass, roomId, confirmName)` | 合言葉、ルーム ID、確認用に入力したルーム名 | — | `BAD_PASSPHRASE` `NAME_MISMATCH` `ROOM_PLAYING` | F-19 |
 
 - `createRoom` は、RoomDirectory が roomId と司会トークンを作り、BingoRoom を初期化する（Agent どうしの呼び出し。画面からは呼べない）
+- `regenerateHostToken` は、RoomDirectory と BingoRoom の両方の司会トークンを新しくし、BingoRoom が古いトークンの司会接続に `host:token-changed` を送って切る
 - BingoRoom は、状態が変わったとき（開始・終了・削除）に RoomDirectory に知らせ、一覧の状態を更新する
 
 ### 5. サーバーの中の処理
@@ -180,3 +181,4 @@ RoomDirectory は1つだけ（名前は固定）。どのメソッドも、毎�
 ## 変更履歴
 - 2026-10-31 初版を確定
 - 2026-10-31 #9 の決定を反映：replaceParticipantCode・revokeCode・regenerateHostToken、メッセージ2種、エラー2種を追加
+- 2026-10-31 文書間の矛盾を修正：listCodes の all の範囲、司会トークンの作り直しの流れを明記
