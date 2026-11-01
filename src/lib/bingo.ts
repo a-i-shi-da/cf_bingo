@@ -158,11 +158,21 @@ const BLOCKING_PERMUTATIONS: readonly number[][] = (() => {
 })();
 
 /**
+ * 途中参加の受付が終わっているか（game-rules 7章）。
+ * どこかの列の番号がすべて引かれていると、どんなカードを作ってもその列が揃ってビンゴになるため、
+ * それ以降は途中参加を受け付けない（エラー LATE_JOIN_CLOSED）。
+ */
+export function isLateJoinClosed(drawn: readonly number[]): boolean {
+  const used = new Set(drawn);
+  return COLUMN_RANGES.some(([lo, hi]) => range(lo, hi).every((n) => used.has(n)));
+}
+
+/**
  * 途中参加の人のカードを作る（game-rules 7章）。参加した時点でビンゴになっていないカードを返す。
  *
  * まず普通に作ってビンゴでないものを探し（tries 回まで）、見つからなければ、
  * 各ラインに「まだ引いていない番号」を1つずつ置いて作る。
- * どこかの列の番号がすべて引かれていると、どう作ってもビンゴになるので null を返す。
+ * 途中参加の受付が終わっていたら（isLateJoinClosed）、どう作ってもビンゴになるので null を返す。
  */
 export function generateLateJoinCard(
   drawn: readonly number[],
@@ -174,9 +184,9 @@ export function generateLateJoinCard(
     if (!isBingo(card, drawn)) return card;
   }
 
+  if (isLateJoinClosed(drawn)) return null;
   const used = new Set(drawn);
   const undrawnByColumn = COLUMN_RANGES.map(([lo, hi]) => range(lo, hi).filter((n) => !used.has(n)));
-  if (undrawnByColumn.some((list) => list.length === 0)) return null;
 
   const perm = BLOCKING_PERMUTATIONS[rand(BLOCKING_PERMUTATIONS.length)];
   const columns = COLUMN_RANGES.map(([lo, hi], c) => {

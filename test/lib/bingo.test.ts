@@ -8,6 +8,7 @@ import {
   generateCard,
   generateLateJoinCard,
   isBingo,
+  isLateJoinClosed,
   judgeAll,
   markedCells,
   type Card,
@@ -224,11 +225,9 @@ describe("途中参加のカード（game-rules 7章）", () => {
       const rand = seededRandom(seed * 100 + n);
       const drawn = drawAll(rand).slice(0, n);
       const card = generateLateJoinCard(drawn, rand);
-      if (card === null) {
-        // 作れないのは、どこかの列の番号をすべて引いたときだけ
-        expect(COLUMN_RANGES.some(([lo, hi]) => Array.from({ length: hi - lo + 1 }, (_, i) => lo + i).every((x) => drawn.includes(x)))).toBe(true);
-        continue;
-      }
+      // 作れないのは、途中参加の受付が終わったときだけ
+      expect(card === null).toBe(isLateJoinClosed(drawn));
+      if (card === null) continue;
       expect(isBingo(card, drawn)).toBe(false);
     }
   });
@@ -238,7 +237,8 @@ describe("途中参加のカード（game-rules 7章）", () => {
       const rand = seededRandom(seed);
       const drawn = drawAll(rand).slice(0, 60);
       const card = generateLateJoinCard(drawn, rand, 0);
-      if (card === null) continue; // どこかの列を引き切っている
+      expect(card === null).toBe(isLateJoinClosed(drawn));
+      if (card === null) continue;
       expect(isBingo(card, drawn)).toBe(false);
       // カードの形も守られている
       COLUMN_RANGES.forEach(([lo, hi], c) => {
@@ -261,7 +261,17 @@ describe("途中参加のカード（game-rules 7章）", () => {
     expect(st.almostLines).toBeGreaterThan(0);
   });
 
-  it("どこかの列の番号がすべて引かれていたら、作れないので null", () => {
+  it("どこかの列の番号がすべて引かれたら、途中参加の受付は終わり", () => {
+    expect(isLateJoinClosed([])).toBe(false);
+    expect(isLateJoinClosed([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14])).toBe(false);
+    expect(isLateJoinClosed([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15])).toBe(true);
+    // N列（31-45）は FREE があっても15個すべて引かれたら終わり
+    expect(isLateJoinClosed(Array.from({ length: 15 }, (_, i) => 31 + i))).toBe(true);
+    // 各列に1つずつ残っていれば、まだ受け付ける
+    expect(isLateJoinClosed(Array.from({ length: 75 }, (_, i) => i + 1).filter((n) => ![1, 16, 31, 46, 61].includes(n)))).toBe(false);
+  });
+
+  it("途中参加の受付が終わっていたら、作れないので null", () => {
     const drawn = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]; // B列を引き切った
     expect(generateLateJoinCard(drawn, seededRandom(1), 0)).toBeNull();
     expect(generateLateJoinCard(drawAll(), seededRandom(1))).toBeNull();

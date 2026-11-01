@@ -1,6 +1,6 @@
 # リアルタイム通信仕様
 
-> 状態: 確定（2026-10-31 に改訂。下の「変更履歴」を参照）
+> 状態: 確定（2026-11-01 に改訂。下の「変更履歴」を参照）
 
 ## 目的
 クライアント（画面）と Agent（BingoRoom・RoomDirectory）のあいだの取り決めを定める。データの項目は domain-model.md、機能 ID（F-xx）は requirements.md を参照。
@@ -70,6 +70,7 @@ type RoomPublicState = {
 | `host:codes` | host の接続すべて | 名乗ったとき、発行・使用・無効化のあと | 発行済み・使用済み・未使用の枚数 |
 | `room:deleted` | 全員 | ルームを削除するとき（送ったあと全員の接続を切る） | なし |
 
+- カードは `number[][]`（`cells[行][列]`。列は B・I・N・G・O の順）で、中央の FREE は `0`（`src/lib/bingo.ts` の `Card`・`FREE`）
 - `player:self` のカードは、名乗ったときに1回だけ送る。それ以降は、リーチ・ビンゴが変わったときに数字だけを送る
 - 同じ参加者が2台でつないでいる場合（復帰したときなど）は、両方に送る
 
@@ -81,10 +82,11 @@ type RoomPublicState = {
 |---|---|---|---|---|
 | `authScreen()` | — | — | — | F-30 |
 | `authHost(token)` | 司会トークン | — | `BAD_TOKEN` | 司会画面 |
-| `join(code, nickname)` | 参加コード、ニックネーム | 自分の情報（`player:self` と同じ） | `CODE_INVALID` `CODE_REVOKED` `NICKNAME_TAKEN` `NICKNAME_INVALID` `ROOM_FULL` `ROOM_FINISHED` | F-20 |
+| `join(code, nickname)` | 参加コード、ニックネーム | 自分の情報（`player:self` と同じ） | `CODE_INVALID` `CODE_REVOKED` `NICKNAME_TAKEN` `NICKNAME_INVALID` `ROOM_FULL` `ROOM_FINISHED` `LATE_JOIN_CLOSED` | F-20 |
 | `resume(code)` | 参加コード | 自分の情報 | `CODE_UNUSED`（ニックネーム入力へ） `CODE_INVALID` `CODE_REVOKED` | F-21 |
 
-- `join` に使用済みのコードが来たときは、ニックネームを無視して `resume` と同じ動きにする（元のカードに戻る）
+- `join` に使用済みのコードが来たときは、ニックネームを無視して `resume` と同じ動きにする（元のカードに戻る）。この場合は `ROOM_FULL` `ROOM_FINISHED` `LATE_JOIN_CLOSED` にならない
+- どこかの列の番号がすべて引かれたあとの新しい参加は `LATE_JOIN_CLOSED`（game-rules 7章。判定は `src/lib/bingo.ts` の `isLateJoinClosed`）
 - 開き直したときは、ブラウザに保存した参加コードで `resume` を呼ぶ
 
 #### 4-2. BingoRoom：司会だけ（host の接続から）
@@ -160,6 +162,7 @@ RoomDirectory は1つだけ（名前は固定で `main`）。どのメソッド�
 | `NAME_MISMATCH` | 削除の確認で入れたルーム名が違う | ルーム名が一致しません |
 | `ROOM_FULL` | 参加者が100人に達した | 定員に達しました |
 | `ROOM_FINISHED` | 終了したルームで参加・発行しようとした | このゲームは終了しました |
+| `LATE_JOIN_CLOSED` | どこかの列の番号がすべて引かれたあとに、新しく参加しようとした（game-rules 7章） | 途中参加の受付は終了しました |
 | `ROOM_PLAYING` | ゲーム中のルームを削除しようとした | ゲーム中のルームは削除できません |
 | `NOT_WAITING` `NOT_PLAYING` | 今の状態ではできない操作 | （ボタンを押せないようにしておく） |
 | `COOLDOWN` | 前の抽選から3秒たっていない | （何もしない。画面は残り時間を表示している） |
@@ -197,3 +200,4 @@ RoomDirectory は1つだけ（名前は固定で `main`）。どのメソッド�
 - 2026-10-31 文書間の矛盾を修正：listCodes の all の範囲、司会トークンの作り直しの流れを明記
 - 2026-11-01 公開 state に startedAt を追加（domain-model.md の「公開」に合わせた）。RoomDirectory の名前（`main`）を明記
 - 2026-11-01 7章の確認結果を記入（Phase 2）。クライアントからの state の書き換えを拒否すること、初期化していないルームを拒否することを追記
+- 2026-11-01 `join` のエラーに `LATE_JOIN_CLOSED` を追加（game-rules 7章）。カードの形（FREE は 0）を明記
