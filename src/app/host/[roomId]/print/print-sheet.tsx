@@ -8,6 +8,7 @@ import type { CodeEntry } from "@/agents/types";
 import { formatJoinCode } from "@/lib/join-code";
 import { errorMessage } from "@/lib/error-messages";
 import { hostTokenStore } from "@/lib/client-storage";
+import { ConnectionBanner } from "@/components/connection-banner";
 import { END_TEXT, useBingoRoom, type RoomAgent } from "@/hooks/use-bingo-room";
 import { useHostToken } from "../host-screen";
 
@@ -67,6 +68,7 @@ export function PrintSheet({ roomId }: { roomId: string }) {
 
   return (
     <div className="min-h-dvh bg-white text-black">
+      <ConnectionBanner connected={connected} />
       {/* 画面だけに出す操作（印刷では消す） */}
       <div className="flex flex-wrap items-center gap-3 border-b bg-neutral-100 p-4 print:hidden">
         <Link href={`/host/${roomId}`} className="rounded-md border border-neutral-400 px-3 py-2">

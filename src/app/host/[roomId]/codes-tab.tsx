@@ -30,8 +30,8 @@ export function CodesTab(props: Props) {
     <div className="space-y-4">
       {props.counts && (
         <p className="text-sm">
-          発行済み <strong>{props.counts.used + props.counts.unused}</strong>枚（使用済み {props.counts.used}・未使用{" "}
-          {props.counts.unused}）{props.counts.revoked > 0 && ` ／ 無効 ${props.counts.revoked}枚`}
+          発行済み <strong>{props.counts.issued}</strong>枚（使用済み {props.counts.used}・未使用 {props.counts.unused}・無効{" "}
+          {props.counts.revoked}）／ 上限150枚
         </p>
       )}
 

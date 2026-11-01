@@ -12,7 +12,7 @@ function DelayedBanner({ delayMs }: { delayMs: number }) {
   }, [delayMs]);
   if (!visible) return null;
   return (
-    <div role="status" className="fixed inset-x-0 top-0 z-50 bg-destructive py-2 text-center text-sm font-bold text-white">
+    <div role="status" className="fixed inset-x-0 top-0 z-50 print:hidden bg-destructive py-2 text-center text-sm font-bold text-white">
       再接続中…
     </div>
   );
