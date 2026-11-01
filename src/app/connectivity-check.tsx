@@ -18,7 +18,12 @@ export function ConnectivityCheck() {
   const room = useAgent<BingoRoom, RoomPublicState>({
     agent: "BingoRoom",
     name: TEST_ROOM,
-    onStateUpdate: (s) => setState(s),
+    // 表示にはサーバーから届いた state だけを使う。
+    // クライアントの setState は送ると同時に "client" として呼ばれ、拒否されても戻らないため
+    onStateUpdate: (s, source) => {
+      if (source === "server") setState(s);
+    },
+    onStateUpdateError: (error) => add(`state の書き換えを拒否されました：${error}`),
     onOpen: () => setConnected(true),
     onClose: () => setConnected(false),
   });

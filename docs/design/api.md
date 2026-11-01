@@ -180,6 +180,7 @@ RoomDirectory は1つだけ（名前は固定で `main`）。どのメソッド�
 
 #### わかった注意点（実装で守ること）
 - **公開 state は、既定ではクライアントからも書き換えられる**（`useAgent` の `setState`）。BingoRoom では `validateStateChange(next, source)` で `source !== "server"` を拒否する（実装済み・テスト済み）。RoomDirectory は公開 state を使わない
+  - **画面（クライアント）の側でも、`setState` は使わず、表示には `onStateUpdate(state, source)` の `source === "server"` の state だけを使う**。クライアントの `setState` は送ると同時に自分の表示を書き換え（`source` は `"client"`）、サーバーが拒否しても元に戻さないため（Phase 2 にブラウザで確認）
   - 「読み取り専用の接続」（`shouldConnectionBeReadonly`）は、その接続から呼んだ callable の中の `setState` まで止めてしまうので使わない
 - **`/agents/bingo-room/<好きな名前>` に接続すると、その名前の Agent が作られてしまう**。Phase 4 で、RoomDirectory が作っていないルーム（初期化されていない BingoRoom）への接続・callable を拒否する。RoomDirectory も固定の名前（`main`）以外を拒否する
 - callable の中で投げた例外は、クライアントに `error` として返り、サーバーのログに `RPC error:` として出る。想定内のエラーは投げずに `{ ok: false, error }` を返す（4章の決まりどおり）

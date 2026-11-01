@@ -39,6 +39,6 @@
 - 75ボール方式: B1-15 / I16-30 / N31-45（中央FREE）/ G46-60 / O61-75
 - OpenNext・Agents SDK は変化が速いので、実装前に公式ドキュメントで最新 API を確認する
 - Agent の型引数の env は `Cloudflare.Env` を使う（OpenNext が別に宣言する `CloudflareEnv` は項目が省略可能になっていて型が合わない）
-- 公開 state はクライアントからも書き換えられるので、`validateStateChange` でサーバー以外からの変更を拒否する（docs/design/api.md 7章）
+- 公開 state はクライアントからも書き換えられるので、`validateStateChange` でサーバー以外からの変更を拒否する。画面では `setState` を使わず、`onStateUpdate` の `source === "server"` の state だけを表示に使う（docs/design/api.md 7章）
 - `@callable()` は TC39 標準のデコレーター。`experimentalDecorators` を有効にしない
 - フェーズごとに小さく実装 → テスト → コミット
