@@ -14,7 +14,7 @@
 ## 構成
 - `worker.ts` — `/agents/*` を `routeAgentRequest` へ、それ以外を OpenNext handler へ。`BingoRoom` と `RoomDirectory` を export
 - `wrangler.jsonc` — Worker の設定（DO のバインディング・マイグレーション）。変えたら `pnpm cf-typegen` で `cloudflare-env.d.ts` を作り直す
-- `test/` — Vitest（workerd 上で実行）。`test/worker.ts` は OpenNext の生成物に頼らず Agent だけを動かすテスト用エントリ。確認用の callable（役割を書き換えるなど本番に入れてはいけないもの）は、ここで本番のクラスを継承して足す。`test/lib/` は `src/lib/` の単体テスト（乱数は `test/helpers/seeded-random.ts` で固定する）
+- `test/` — Vitest（workerd 上で実行）。`test/worker.ts` は OpenNext の生成物に頼らず Agent だけを動かすテスト用エントリ。確認用の callable（役割を書き換えるなど本番に入れてはいけないもの）は、ここで本番のクラスを継承して足す。`test/lib/` は `src/lib/` の単体テスト（乱数は `test/helpers/seeded-random.ts` で固定する）。BingoRoom の結合テストは `test/helpers/room.ts` の道具でルームを作って司会・参加者としてつなぐ
 - `src/agents/bingo-room.ts` — ルームの Agent（1ルーム=1インスタンス、名前=roomId）
 - `src/agents/room-directory.ts` — ルーム一覧の Agent（インスタンスは1つ。合言葉で守る）
 - `src/lib/` — 純粋関数（`bingo.ts` ゲームロジック、`join-code.ts` 参加コードの生成・正規化、`ids.ts` ルーム ID・司会トークン、`validate.ts` 入力チェック、`csv.ts` CSV、`random.ts` 暗号論的な乱数）。乱数を使う関数は `RandomInt` を引数で受け取る。`utils.ts` は shadcn の `cn()`

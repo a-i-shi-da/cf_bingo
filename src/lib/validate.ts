@@ -30,3 +30,11 @@ export function checkNickname(input: unknown): TextCheck {
 export function checkRoomName(input: unknown): TextCheck {
   return checkLength(input, ROOM_NAME_MAX);
 }
+
+/**
+ * ニックネームが重なるかを比べるための形。全角・半角と大文字・小文字の違いは同じとみなす
+ * （「Taro」と「ｔａｒｏ」が並ぶと、会場で読み上げたときに区別できないため）
+ */
+export function nicknameKey(nickname: string): string {
+  return nickname.normalize("NFKC").toLowerCase();
+}

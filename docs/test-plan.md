@@ -63,6 +63,14 @@ game-rules.md の各項目を、そのままテストにする。
 - CSV の列の並びは Phase 4（`exportResults`）で決める。Phase 3 は書き出しの共通部分だけ
 
 ### 3. 結合テスト（Phase 4・5）
+
+#### 3-0. 実装したテスト（Phase 4）
+- `test/bingo-room.test.ts`：下の表のシナリオのうち BingoRoom の分（RoomDirectory の一覧・合言葉は Phase 5）。ほかに、初期化していないルームの拒否、状態ごとのエラー、コードの上限、listCodes、CSV、RoomDirectory への通知、ハイバネーション後の配信、切断したときのオフライン表示
+- `test/lib/room-helpers.test.ts`：試行回数の制限・秘密の値の比較・ニックネームの比較・結果の並びと CSV（`src/lib/` の純粋関数）
+- テスト用の道具：`test/helpers/room.ts`（`createRoom`・`connectHost`・`connectPlayer`・`issueCodes`）。`test/worker.ts` の BingoRoom は、時計を進める（`testAdvance`）、次の番号・カードを決める（`testSetNextNumbers`・`testSetNextCards`）、スケジュールを読む（`testSchedules`）ことができる
+- 自動削除は、時計を進めてから `checkExpiry` を直接呼んで確かめる（スケジュールが予約されていることは `testSchedules` で別に確かめる）
+- `destroy()` のあと、テストのログに `broken.outputGateBroken; jsg.Error: destroyed` が出るのは正常（api.md 7章）
+
 api.md の callable・メッセージ・エラーを1つずつ確かめる。主なシナリオは次のとおり。
 
 | シナリオ | 確かめること | 関係する機能 |

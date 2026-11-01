@@ -31,7 +31,8 @@
 | player（参加者） | `join` または `resume` | 公開 state ＋ 自分の情報（`player:self`） |
 | host（司会） | `authHost(token)` | 公開 state ＋ 参加者一覧（`host:participants`）＋ コードの枚数（`host:codes`） |
 
-- 1つの接続が持てる役割は1つ。司会の操作（4章）は host の接続からしか受け付けない
+- 1つの接続が持てる役割は1つ。司会の操作（4章）は host の接続からしか受け付けない。名乗り直すと役割は置き換わる
+- RoomDirectory が初期化していないルーム（削除済みを含む）に接続すると、`room:not-found` を送って切る（公開 state は空のものが先に届く）
 - 秘密の値を URL に入れない理由：URL はアクセスログやブラウザの履歴に残りやすいため
 - ただし **司会用 URL の `?t=` と個別 QR の `?c=` はページの URL** なので、ページを開いたあと画面のプログラムがその値を読み、callable で送る（読み取ったらすぐアドレスバーから消す。#9 の3章）
 
@@ -69,10 +70,23 @@ type RoomPublicState = {
 | `host:participants` | host の接続すべて | 名乗ったとき、参加・削除・接続/切断・抽選のあと（多くても1秒に1回にまとめる） | 参加者全員：ID・ニックネーム・接続状態・最終接続時刻・リーチ数・ビンゴ順位・何回目か |
 | `host:codes` | host の接続すべて | 名乗ったとき、発行・使用・無効化のあと | 発行済み・使用済み・未使用の枚数 |
 | `room:deleted` | 全員 | ルームを削除するとき（送ったあと全員の接続を切る） | なし |
+| `room:not-found` | 接続した人 | 初期化されていない（または削除済みの）ルームに接続したとき（送ったあと接続を切る） | なし |
 
 - カードは `number[][]`（`cells[行][列]`。列は B・I・N・G・O の順）で、中央の FREE は `0`（`src/lib/bingo.ts` の `Card`・`FREE`）
 - `player:self` のカードは、名乗ったときに1回だけ送る。それ以降は、リーチ・ビンゴが変わったときに数字だけを送る
 - 同じ参加者が2台でつないでいる場合（復帰したときなど）は、両方に送る
+- 中身の型は `src/agents/types.ts` の `ServerMessage`
+
+#### 3-1. サーバーが接続を切るときのコード
+| コード | 理由 |
+|---|---|
+| 4001 | 司会用 URL が作り直された（`host:token-changed` のあと） |
+| 4003 | 参加者が削除された／コードが差し替えられた（`player:removed`・`player:code-replaced` のあと） |
+| 4029 | 司会トークンを間違え続けた（`RATE_LIMITED` を返したあと） |
+| 4404 | ルームがない（`room:not-found` のあと） |
+| 4410 | ルームが削除された（`room:deleted` のあと） |
+
+- 画面は、これらのコードで切られたときは自動で再接続しない
 
 ### 4. callable（画面 → サーバー）
 戻り値はすべて `{ ok: true, ... }` か `{ ok: false, error: エラーコード }`。エラーコードは 6章。
@@ -81,13 +95,17 @@ type RoomPublicState = {
 | メソッド | 引数 | 戻り値（成功時） | 主なエラー | 機能 |
 |---|---|---|---|---|
 | `authScreen()` | — | — | — | F-30 |
-| `authHost(token)` | 司会トークン | — | `BAD_TOKEN` | 司会画面 |
-| `join(code, nickname)` | 参加コード、ニックネーム | 自分の情報（`player:self` と同じ） | `CODE_INVALID` `CODE_REVOKED` `NICKNAME_TAKEN` `NICKNAME_INVALID` `ROOM_FULL` `ROOM_FINISHED` `LATE_JOIN_CLOSED` | F-20 |
-| `resume(code)` | 参加コード | 自分の情報 | `CODE_UNUSED`（ニックネーム入力へ） `CODE_INVALID` `CODE_REVOKED` | F-21 |
+| `authHost(token)` | 司会トークン | — | `BAD_TOKEN` `RATE_LIMITED` | 司会画面 |
+| `join(code, nickname)` | 参加コード、ニックネーム | 自分の情報（`player:self` と同じ） | `CODE_INVALID` `CODE_REVOKED` `NICKNAME_TAKEN` `NICKNAME_INVALID` `ROOM_FULL` `ROOM_FINISHED` `LATE_JOIN_CLOSED` `RATE_LIMITED` | F-20 |
+| `resume(code)` | 参加コード | 自分の情報 | `CODE_UNUSED`（ニックネーム入力へ） `CODE_INVALID` `CODE_REVOKED` `RATE_LIMITED` | F-21 |
+| `ping()` | — | `{ name, now }` | — | 疎通確認（秘密の値は返さない） |
 
 - `join` に使用済みのコードが来たときは、ニックネームを無視して `resume` と同じ動きにする（元のカードに戻る）。この場合は `ROOM_FULL` `ROOM_FINISHED` `LATE_JOIN_CLOSED` にならない
 - どこかの列の番号がすべて引かれたあとの新しい参加は `LATE_JOIN_CLOSED`（game-rules 7章。判定は `src/lib/bingo.ts` の `isLateJoinClosed`）
 - 開き直したときは、ブラウザに保存した参加コードで `resume` を呼ぶ
+- 「自分の情報」は `{ self: PlayerSelf }`（`player:self` と同じ中身。カード付き）。同じものを `player:self` でも送る
+- `join` で確かめる順番：試行回数の制限 → コード（`CODE_INVALID` `CODE_REVOKED`。使用済みなら復帰）→ `ROOM_FINISHED` → `NICKNAME_INVALID` → `ROOM_FULL` → `LATE_JOIN_CLOSED` → `NICKNAME_TAKEN`
+- どのメソッドも、初期化されていないルームでは `ROOM_NOT_FOUND`
 
 #### 4-2. BingoRoom：司会だけ（host の接続から）
 | メソッド | 引数 | 戻り値（成功時） | 主なエラー | 機能 |
@@ -95,17 +113,19 @@ type RoomPublicState = {
 | `start()` | — | — | `NOT_WAITING` | F-04 |
 | `draw()` | — | `{ seq, number }` | `NOT_PLAYING` `COOLDOWN` `NO_NUMBERS_LEFT` | F-05 |
 | `finish()` | — | — | `NOT_PLAYING` | F-06 |
-| `issueCodes(count)` | 枚数（1〜） | 発行したコードの一覧 | `CODE_LIMIT`（合計150枚を超える） `ROOM_FINISHED` | F-02 |
-| `listCodes(filter)` | `"unused"` または `"all"`（all でも無効のコードは除く） | コードと状態の一覧 | — | F-03 印刷 |
-| `getParticipantCode(participantId)` | 参加者 ID | 参加コード | `NOT_FOUND` | F-09 |
-| `removeParticipant(participantId)` | 参加者 ID | — | `NOT_FOUND` | F-08 |
-| `replaceParticipantCode(participantId)` | 参加者 ID | 新しい参加コード | `NOT_FOUND` `CODE_LIMIT` | F-11 |
-| `revokeCode(code)` | 未使用の参加コード | — | `NOT_FOUND` `CODE_USED` | F-11 |
-| `exportResults()` | — | CSV の文字列（Excel 用に BOM 付き） | — | F-10 |
+| `issueCodes(count)` | 枚数（1〜） | `{ codes }`（発行したコードの一覧） | `CODE_LIMIT`（無効・差し替えを含めて合計150枚を超える） `ROOM_FINISHED` `INVALID_ARGUMENT` | F-02 |
+| `listCodes(filter)` | `"unused"` または `"all"`（all でも無効のコードは除く） | `{ codes: { code, status, issuedAt }[] }`（発行順） | `INVALID_ARGUMENT` | F-03 印刷 |
+| `getParticipantCode(participantId)` | 参加者 ID | `{ code }` | `NOT_FOUND` | F-09 |
+| `removeParticipant(participantId)` | 参加者 ID | — | `NOT_FOUND` `ROOM_FINISHED` | F-08 |
+| `replaceParticipantCode(participantId)` | 参加者 ID | `{ code }`（新しい参加コード） | `NOT_FOUND` `CODE_LIMIT` `ROOM_FINISHED` | F-11 |
+| `revokeCode(code)` | 未使用の参加コード | — | `NOT_FOUND` `CODE_USED` `ROOM_FINISHED` | F-11 |
+| `exportResults()` | — | `{ csv }`（CSV の文字列。Excel 用に BOM 付き） | — | F-10 |
 
 - host 以外の接続から呼ばれたら `FORBIDDEN`
 - 確認ポップアップは画面側で出す。サーバーは確認の有無を知らない
 - ニックネームの検索（F-09）は、`host:participants` を使って画面側で行う
+- 司会トークンを作り直す前に名乗った接続は、切られるまでの間も司会の操作を `FORBIDDEN` にする
+- CSV の列：順位・ニックネーム・ビンゴした抽選回・リーチ数・揃ったライン数・参加した日時（日本時間）・参加時の抽選回数。並びは司会画面と同じ（ビンゴ → リーチ → 参加順）。削除された参加者と参加コードは入れない
 
 #### 4-3. RoomDirectory：合言葉が必要（管理画面 S-01）
 RoomDirectory は1つだけ（名前は固定で `main`）。どのメソッドも、毎回合言葉を引数で受け取って確かめる。
@@ -120,6 +140,17 @@ RoomDirectory は1つだけ（名前は固定で `main`）。どのメソッド�
 
 - `createRoom` は、RoomDirectory が roomId と司会トークンを作り、BingoRoom を初期化する（Agent どうしの呼び出し。画面からは呼べない）
 - `regenerateHostToken` は、RoomDirectory と BingoRoom の両方の司会トークンを新しくし、BingoRoom が古いトークンの司会接続に `host:token-changed` を送って切る
+
+#### 4-4. Agent どうしの呼び出し（`@callable()` ではない。画面からは呼べない）
+| 呼ぶ側 → 呼ばれる側 | メソッド | 内容 | 主なエラー |
+|---|---|---|---|
+| RoomDirectory → BingoRoom | `initRoom(name, hostToken)` | ルームを初期化し、30日後の期限の確認を予約する | `ALREADY_INITIALIZED` `NAME_INVALID` `INVALID_ARGUMENT` |
+| RoomDirectory → BingoRoom | `setHostToken(hostToken)` | 司会トークンを替え、古いトークンの司会接続を切る | `ROOM_NOT_FOUND` `INVALID_ARGUMENT` |
+| RoomDirectory → BingoRoom | `deleteRoom()` | 全員に `room:deleted` を送ってデータを消す（RoomDirectory への通知はしない） | `ROOM_NOT_FOUND` `ROOM_PLAYING` |
+| BingoRoom → RoomDirectory | `roomChanged(roomId, { status, deleteAt })` | 開始・終了したとき | — |
+| BingoRoom → RoomDirectory | `roomDeleted(roomId)` | 期限が来て自動で削除したとき | — |
+
+- BingoRoom から RoomDirectory への通知は、失敗しても操作は止めない（ログに残す）
 - BingoRoom は、状態が変わったとき（開始・終了・削除）に RoomDirectory に知らせ、一覧の状態を更新する
 
 ### 5. サーバーの中の処理
@@ -134,7 +165,7 @@ RoomDirectory は1つだけ（名前は固定で `main`）。どのメソッド�
 7. 公開 state を更新して全員に配る
 8. リーチ・ビンゴが変わった参加者に `player:self`、司会に `host:participants` を送る
 
-- Durable Object は要求を1つずつ処理するので、司会2人がほぼ同時に押しても、2つ目は手順3で `COOLDOWN` になる
+- Durable Object は要求を1つずつ処理するので、司会2人がほぼ同時に押しても、2つ目は手順3で `COOLDOWN` になる（結合テストで確認）
 
 #### 5-2. 接続と切断
 - 接続したとき・切れたときに、その参加者の接続状態と最終接続時刻を更新し、司会に知らせる
@@ -143,6 +174,7 @@ RoomDirectory は1つだけ（名前は固定で `main`）。どのメソッド�
 
 #### 5-3. 自動削除
 - 終了したとき、7日後の削除を予約する（Agent のスケジュール機能）
+- 放置ルームは、作成時に30日後の確認（`checkExpiry`）を予約する。確認のときに「最後に使われた日時＋30日」を過ぎていなければ、その日時に確認を予約し直す（使うたびに予約を入れ直さない）
 - 削除するときは、`room:deleted` を送って全員の接続を切り、データを消し、RoomDirectory に知らせる
 
 ### 6. エラーコード
@@ -168,7 +200,10 @@ RoomDirectory は1つだけ（名前は固定で `main`）。どのメソッド�
 | `COOLDOWN` | 前の抽選から3秒たっていない | （何もしない。画面は残り時間を表示している） |
 | `NO_NUMBERS_LEFT` | 75個すべて引いた | すべての番号を引きました |
 | `CODE_LIMIT` | 参加コードが150枚を超える | これ以上発行できません（上限150枚） |
-| `NOT_FOUND` | 参加者が見つからない | 参加者が見つかりません |
+| `NOT_FOUND` | 参加者・コードが見つからない | 参加者が見つかりません |
+| `ROOM_NOT_FOUND` | ルームが初期化されていない（または削除済み） | このルームは見つかりません |
+| `ALREADY_INITIALIZED` | 初期化済みのルームを初期化しようとした（Agent どうしの呼び出しだけ） | — |
+| `INVALID_ARGUMENT` | 引数の形が違う（枚数が整数でない、など） | — |
 
 ### 7. 実装の前に確かめること（Phase 2・確認済み）
 2026-11-01 に `agents` 0.32.0 の公式ドキュメント（パッケージ同梱の `docs/`）とスモークテスト（`test/smoke.test.ts`）で確かめた。
@@ -185,7 +220,7 @@ RoomDirectory は1つだけ（名前は固定で `main`）。どのメソッド�
 - **公開 state は、既定ではクライアントからも書き換えられる**（`useAgent` の `setState`）。BingoRoom では `validateStateChange(next, source)` で `source !== "server"` を拒否する（実装済み・テスト済み）。RoomDirectory は公開 state を使わない
   - **画面（クライアント）の側でも、`setState` は使わず、表示には `onStateUpdate(state, source)` の `source === "server"` の state だけを使う**。クライアントの `setState` は送ると同時に自分の表示を書き換え（`source` は `"client"`）、サーバーが拒否しても元に戻さないため（Phase 2 にブラウザで確認）
   - 「読み取り専用の接続」（`shouldConnectionBeReadonly`）は、その接続から呼んだ callable の中の `setState` まで止めてしまうので使わない
-- **`/agents/bingo-room/<好きな名前>` に接続すると、その名前の Agent が作られてしまう**。Phase 4 で、RoomDirectory が作っていないルーム（初期化されていない BingoRoom）への接続・callable を拒否する。RoomDirectory も固定の名前（`main`）以外を拒否する
+- **`/agents/bingo-room/<好きな名前>` に接続すると、その名前の Agent が作られてしまう**。BingoRoom は、RoomDirectory が作っていないルーム（初期化されていない BingoRoom）への接続・callable を拒否する（Phase 4 で実装）。RoomDirectory も固定の名前（`main`）以外を拒否する（Phase 5）
 - callable の中で投げた例外は、クライアントに `error` として返り、サーバーのログに `RPC error:` として出る。想定内のエラーは投げずに `{ ok: false, error }` を返す（4章の決まりどおり）
 - **`initialState` は、state がまだ保存されていない Agent でだけ使われる**。公開 state に項目を足しても、すでにあるルームには入らない（Phase 2 で確認）。本番にルームができたあとで項目を足すときは、`onStart` で足りない項目を補う
 - `@callable()` は TC39 標準のデコレーター。tsconfig は `target: ES2021` 以上にし、`experimentalDecorators` は使わない。Vitest（Vite 8）では `agents/vite` プラグインが必要
@@ -201,3 +236,4 @@ RoomDirectory は1つだけ（名前は固定で `main`）。どのメソッド�
 - 2026-11-01 公開 state に startedAt を追加（domain-model.md の「公開」に合わせた）。RoomDirectory の名前（`main`）を明記
 - 2026-11-01 7章の確認結果を記入（Phase 2）。クライアントからの state の書き換えを拒否すること、初期化していないルームを拒否することを追記
 - 2026-11-01 `join` のエラーに `LATE_JOIN_CLOSED` を追加（game-rules 7章）。カードの形（FREE は 0）を明記
+- 2026-11-01 Phase 4 の実装に合わせて追記：`room:not-found`、接続を切るときのコード、Agent どうしの呼び出し（4-4）、戻り値の形、エラー（`ROOM_NOT_FOUND` `ALREADY_INITIALIZED` `INVALID_ARGUMENT`、各メソッドの `ROOM_FINISHED` `RATE_LIMITED`）、`join` で確かめる順番、CSV の列、放置ルームの確認の予約のしかた

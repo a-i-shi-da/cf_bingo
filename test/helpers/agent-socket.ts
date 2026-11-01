@@ -15,6 +15,9 @@ export async function connectAgent(agent: string, name: string) {
   ws.accept();
 
   const frames: Frame[] = [];
+  const closed = new Promise<{ code: number; reason: string }>((resolve) => {
+    ws.addEventListener("close", (event) => resolve({ code: event.code, reason: event.reason }));
+  });
   const waiters: { match: (f: Frame) => boolean; resolve: (f: Frame) => void }[] = [];
   ws.addEventListener("message", (event) => {
     if (typeof event.data !== "string") return;
@@ -51,5 +54,8 @@ export async function connectAgent(agent: string, name: string) {
     return reply.result;
   };
 
-  return { ws, frames, waitFor, call, close: () => ws.close() };
+  /** 届いた個別メッセージ（type で絞る） */
+  const messages = (type: string) => frames.filter((f) => f.type === type);
+
+  return { ws, frames, waitFor, call, messages, closed, close: () => ws.close() };
 }
