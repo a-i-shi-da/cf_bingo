@@ -65,12 +65,25 @@ export class RoomDirectory extends ProdRoomDirectory {
   /** BingoRoom から届いた知らせ（テストで確かめる） */
   private received: { roomId: string; change: RoomChange | "deleted" }[] = [];
 
+  private clockOffset = 0;
+
+  protected now() {
+    return Date.now() + this.clockOffset;
+  }
+
+  /** 時計を進める（合言葉の締め出しの確認用） */
+  async testAdvance(ms: number) {
+    this.clockOffset += ms;
+  }
+
   async roomChanged(roomId: string, change: RoomChange) {
     this.received.push({ roomId, change });
+    await super.roomChanged(roomId, change);
   }
 
   async roomDeleted(roomId: string) {
     this.received.push({ roomId, change: "deleted" });
+    await super.roomDeleted(roomId);
   }
 
   async testReceived(roomId: string) {

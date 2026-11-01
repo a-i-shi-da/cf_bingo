@@ -11,7 +11,8 @@ export default function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="ja">
+    // 全画面でパーティー風の濃い色のテーマを使う（screens.md 2章）
+    <html lang="ja" className="dark">
       <body className="min-h-dvh antialiased">{children}</body>
     </html>
   );

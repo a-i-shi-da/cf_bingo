@@ -1,11 +1,6 @@
-import { ConnectivityCheck } from "./connectivity-check";
+import { AdminConsole } from "./admin-console";
 
-// Phase 2 の疎通確認ページ（管理画面 S-01 は Phase 5 で作る）
+// S-01 管理（ルーム一覧・作成）。docs/design/screens.md 3章
 export default function Home() {
-  return (
-    <main className="mx-auto max-w-2xl p-4">
-      <h1 className="mb-4 text-2xl font-bold">疎通確認（Phase 2）</h1>
-      <ConnectivityCheck />
-    </main>
-  );
+  return <AdminConsole />;
 }

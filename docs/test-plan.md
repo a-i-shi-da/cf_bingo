@@ -68,6 +68,7 @@ game-rules.md の各項目を、そのままテストにする。
 - `test/bingo-room.test.ts`：下の表のシナリオのうち BingoRoom の分（RoomDirectory の一覧・合言葉は Phase 5）。ほかに、初期化していないルームの拒否、状態ごとのエラー、コードの上限、listCodes、CSV、RoomDirectory への通知、ハイバネーション後の配信、切断したときのオフライン表示
 - `test/lib/room-helpers.test.ts`：試行回数の制限・秘密の値の比較・ニックネームの比較・結果の並びと CSV（`src/lib/` の純粋関数）
 - テスト用の道具：`test/helpers/room.ts`（`createRoom`・`connectHost`・`connectPlayer`・`issueCodes`）。`test/worker.ts` の BingoRoom は、時計を進める（`testAdvance`）、次の番号・カードを決める（`testSetNextNumbers`・`testSetNextCards`）、スケジュールを読む（`testSchedules`）ことができる
+- `test/room-directory.test.ts`（Phase 5）：合言葉（違う合言葉・締め出し・`main` 以外の拒否）、作成と司会用 URL、一覧の並びと状態の更新、自動削除で一覧から消えること、URL の作り直し、削除（確認のルーム名・ゲーム中・開始前と終了後）。テストの合言葉は `vitest.config.mts` で設定し、接続元はテストごとに別の IP（`CF-Connecting-IP`）にする
 - 自動削除は、時計を進めてから `checkExpiry` を直接呼んで確かめる（スケジュールが予約されていることは `testSchedules` で別に確かめる）
 - `destroy()` のあと、テストのログに `broken.outputGateBroken; jsg.Error: destroyed` が出るのは正常（api.md 7章）
 

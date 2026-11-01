@@ -217,6 +217,11 @@ export class BingoRoom extends Agent<Cloudflare.Env, RoomPublicState> {
     return { ok: true };
   }
 
+  /** 初期化済みか（RoomDirectory が削除のあとに確かめる） */
+  async exists(): Promise<boolean> {
+    return this.room() !== undefined;
+  }
+
   /** 削除の期限を確かめる（スケジュールから呼ばれる。domain-model 7章） */
   async checkExpiry() {
     const room = this.room();

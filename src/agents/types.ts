@@ -113,3 +113,14 @@ export type ServerMessage =
 
 /** BingoRoom から RoomDirectory に知らせる内容（api.md 4-3） */
 export type RoomChange = { status: RoomStatus; deleteAt: number | null };
+
+/** ルーム一覧の1行（listRooms の戻り値。司会用 URL を含むので合言葉で守る） */
+export type RoomEntry = {
+  roomId: string;
+  name: string;
+  status: RoomStatus;
+  createdAt: number;
+  /** 削除予定日（終了後だけ入る） */
+  deleteAt: number | null;
+  hostUrl: string;
+};

@@ -10,6 +10,8 @@ export default defineConfig({
       // OpenNext の生成物を使わないテスト用のエントリ
       main: "./test/worker.ts",
       wrangler: { configPath: "./wrangler.jsonc" },
+      // テスト用の合言葉（.dev.vars の値より優先する）
+      miniflare: { bindings: { ADMIN_PASSPHRASE: "test-passphrase-0123" } },
     }),
   ],
   test: {

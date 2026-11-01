@@ -133,12 +133,17 @@ RoomDirectory は1つだけ（名前は固定で `main`）。どのメソッド�
 | メソッド | 引数 | 戻り値（成功時） | 主なエラー | 機能 |
 |---|---|---|---|---|
 | `checkPassphrase(pass)` | 合言葉 | — | `BAD_PASSPHRASE` | 3-1 合言葉の入力 |
-| `listRooms(pass)` | 合言葉 | ルームの一覧（ID・名前・状態・作成日・削除予定日・司会用 URL） | `BAD_PASSPHRASE` | F-16 |
+| `listRooms(pass)` | 合言葉 | `{ rooms: RoomEntry[] }`（ID・名前・状態・作成日・削除予定日・司会用 URL。作成が新しい順） | `BAD_PASSPHRASE` | F-16 |
 | `createRoom(pass, name)` | 合言葉、ルーム名 | `{ roomId, hostUrl }` | `BAD_PASSPHRASE` `NAME_INVALID` | F-01 |
 | `regenerateHostToken(pass, roomId)` | 合言葉、ルーム ID | `{ hostUrl }`（新しい司会用 URL） | `BAD_PASSPHRASE` `NOT_FOUND` | F-40 |
-| `deleteRoom(pass, roomId, confirmName)` | 合言葉、ルーム ID、確認用に入力したルーム名 | — | `BAD_PASSPHRASE` `NAME_MISMATCH` `ROOM_PLAYING` | F-19 |
+| `deleteRoom(pass, roomId, confirmName)` | 合言葉、ルーム ID、確認用に入力したルーム名 | — | `BAD_PASSPHRASE` `NAME_MISMATCH` `ROOM_PLAYING` `NOT_FOUND` | F-19 |
 
 - `createRoom` は、RoomDirectory が roomId と司会トークンを作り、BingoRoom を初期化する（Agent どうしの呼び出し。画面からは呼べない）
+- 合言葉を間違え続けた接続元には、どのメソッドも `RATE_LIMITED` を返す（security.md 2-2）
+- 司会用 URL（hostUrl）は、管理画面を開いているページのオリジン（接続したときの URL）に `/host/<roomId>?t=<司会トークン>` を付けたもの
+- 一覧の削除予定日（deleteAt）は、終了したルームだけに入る（放置ルームの削除予定は一覧に出さない）
+- `deleteRoom` の確認用のルーム名は、前後の空白を除いてから比べる
+- `main` 以外の名前の RoomDirectory に接続すると、切る（コード 4404）
 - `regenerateHostToken` は、RoomDirectory と BingoRoom の両方の司会トークンを新しくし、BingoRoom が古いトークンの司会接続に `host:token-changed` を送って切る
 
 #### 4-4. Agent どうしの呼び出し（`@callable()` ではない。画面からは呼べない）
@@ -238,3 +243,4 @@ RoomDirectory は1つだけ（名前は固定で `main`）。どのメソッド�
 - 2026-11-01 `join` のエラーに `LATE_JOIN_CLOSED` を追加（game-rules 7章）。カードの形（FREE は 0）を明記
 - 2026-11-01 Phase 4 の実装に合わせて追記：`room:not-found`、接続を切るときのコード、Agent どうしの呼び出し（4-4）、戻り値の形、エラー（`ROOM_NOT_FOUND` `ALREADY_INITIALIZED` `INVALID_ARGUMENT`、各メソッドの `ROOM_FINISHED` `RATE_LIMITED`）、`join` で確かめる順番、CSV の列、放置ルームの確認の予約のしかた
 - 2026-11-01 文書との食い違いを修正：`player:self`・`host:participants`・`host:codes` の送るきっかけと中身を実装に合わせた。放置ルームの削除予定の扱い（5-2）を 5-3 に合わせた
+- 2026-11-01 Phase 5 の実装に合わせて 4-3 を追記：listRooms の戻り値、`deleteRoom` の `NOT_FOUND`、`RATE_LIMITED`、司会用 URL の作り方、削除予定日の範囲、確認用のルーム名の比べ方、`main` 以外の拒否

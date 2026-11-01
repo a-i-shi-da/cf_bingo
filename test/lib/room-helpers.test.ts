@@ -1,5 +1,15 @@
 import { describe, expect, it } from "vitest";
-import { JOIN_PER_CONNECTION, isRateLimited, recordFailure, recentFailures } from "../../src/lib/rate-limit";
+import {
+  JOIN_PER_CONNECTION,
+  PASSPHRASE_LOCK_MS,
+  PASSPHRASE_PER_SOURCE,
+  isLockedOut,
+  isRateLimited,
+  recordFailure,
+  recentFailures,
+  recordLockoutFailure,
+  type Lockout,
+} from "../../src/lib/rate-limit";
 import { buildResultsCsv, compareParticipants, formatJst, type ResultRow } from "../../src/lib/results";
 import { secureEqual } from "../../src/lib/secure-compare";
 import { nicknameKey } from "../../src/lib/validate";
@@ -18,6 +28,26 @@ describe("試行回数の制限（security 2-2）", () => {
   it("古い失敗は捨てる", () => {
     expect(recentFailures([0, 30_000, 59_999], 60_000, JOIN_PER_CONNECTION)).toEqual([30_000, 59_999]);
     expect(recordFailure([0], 60_000, JOIN_PER_CONNECTION)).toEqual([60_000]);
+  });
+});
+
+describe("合言葉の締め出し（security 2-2）", () => {
+  it("10分間に5回間違えたら、5回目から10分間は締め出す", () => {
+    let e: Lockout | undefined;
+    for (let i = 0; i < 4; i++) e = recordLockoutFailure(e, i * 1000, PASSPHRASE_PER_SOURCE, PASSPHRASE_LOCK_MS);
+    expect(isLockedOut(e, 4000)).toBe(false);
+    e = recordLockoutFailure(e, 5000, PASSPHRASE_PER_SOURCE, PASSPHRASE_LOCK_MS);
+    expect(isLockedOut(e, 5000)).toBe(true);
+    expect(isLockedOut(e, 5000 + 10 * 60_000 - 1)).toBe(true);
+    expect(isLockedOut(e, 5000 + 10 * 60_000)).toBe(false);
+    expect(isLockedOut(undefined, 0)).toBe(false);
+  });
+
+  it("10分より前の間違いは数えない", () => {
+    let e: Lockout | undefined;
+    for (let i = 0; i < 4; i++) e = recordLockoutFailure(e, i, PASSPHRASE_PER_SOURCE, PASSPHRASE_LOCK_MS);
+    e = recordLockoutFailure(e, 10 * 60_000 + 10, PASSPHRASE_PER_SOURCE, PASSPHRASE_LOCK_MS);
+    expect(isLockedOut(e, 10 * 60_000 + 10)).toBe(false);
   });
 });
 

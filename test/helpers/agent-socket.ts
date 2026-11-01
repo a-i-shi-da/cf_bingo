@@ -6,9 +6,9 @@ type Frame = { type: string; [key: string]: unknown };
  * Agent に WebSocket でつなぐテスト用のクライアント。
  * 届いたフレームを貯めておき、条件に合うものを待てる。
  */
-export async function connectAgent(agent: string, name: string) {
+export async function connectAgent(agent: string, name: string, headers: Record<string, string> = {}) {
   const res = await exports.default.fetch(`http://example.com/agents/${agent}/${name}`, {
-    headers: { Upgrade: "websocket" },
+    headers: { Upgrade: "websocket", ...headers },
   });
   const ws = res.webSocket;
   if (!ws) throw new Error(`WebSocket upgrade failed: ${res.status}`);
