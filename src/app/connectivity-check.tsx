@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useAgent } from "agents/react";
+import { Button } from "@/components/ui/button";
 import type { BingoRoom } from "@/agents/bingo-room";
 import type { RoomDirectory } from "@/agents/room-directory";
 import type { RoomPublicState } from "@/agents/types";
@@ -42,26 +43,23 @@ export function ConnectivityCheck() {
         <strong>{connected ? "接続中" : "未接続"}</strong>
       </p>
       <div className="flex flex-wrap gap-2">
-        <button className="rounded border px-3 py-1" onClick={() => run("ping", () => room.stub.ping())}>
+        <Button variant="outline" onClick={() => run("ping", () => room.stub.ping())}>
           ping
-        </button>
-        <button className="rounded border px-3 py-1" onClick={() => run("whoami", () => room.stub.whoami())}>
+        </Button>
+        <Button variant="outline" onClick={() => run("whoami", () => room.stub.whoami())}>
           whoami
-        </button>
-        <button
-          className="rounded border px-3 py-1"
+        </Button>
+        <Button variant="outline"
           onClick={() => run("whoami(screen)", () => room.stub.whoami("screen"))}
         >
           役割を screen に
-        </button>
-        <button
-          className="rounded border px-3 py-1"
+        </Button>
+        <Button variant="outline"
           onClick={() => run("directory.pingRoom", () => directory.stub.pingRoom(TEST_ROOM))}
         >
           RoomDirectory → BingoRoom
-        </button>
-        <button
-          className="rounded border px-3 py-1"
+        </Button>
+        <Button variant="outline"
           onClick={() =>
             run("client setState（拒否されるはず）", async () => {
               room.setState({ ...(state as RoomPublicState), name: "hacked" });
@@ -70,17 +68,17 @@ export function ConnectivityCheck() {
           }
         >
           クライアントから setState
-        </button>
+        </Button>
       </div>
       <section>
         <h2 className="font-bold">公開 state</h2>
-        <pre className="overflow-x-auto rounded bg-gray-100 p-2 text-sm">
+        <pre className="overflow-x-auto rounded bg-muted p-2 text-sm">
           {state ? JSON.stringify(state, null, 2) : "（未受信）"}
         </pre>
       </section>
       <section>
         <h2 className="font-bold">ログ</h2>
-        <pre className="overflow-x-auto rounded bg-gray-100 p-2 text-sm">{log.join("\n")}</pre>
+        <pre className="overflow-x-auto rounded bg-muted p-2 text-sm">{log.join("\n")}</pre>
       </section>
     </div>
   );

@@ -9,3 +9,4 @@
 | [0003](0003-passphrase-and-host-token-before-clerk.md) | MVP は合言葉と司会トークンで守り、次期に Clerk へ移行する | 採用 |
 | [0004](0004-room-directory-as-agent.md) | ルーム一覧を、1つだけの Agent（RoomDirectory）で持つ | 採用 |
 | [0005](0005-join-code-as-identity.md) | 参加コードを、参加者の身元と復帰の鍵にする | 採用 |
+| [0006](0006-ui-components-shadcn.md) | UI の部品に shadcn/ui（Radix）を使う | 採用 |

@@ -7,6 +7,7 @@
 - Next.js (App Router) + `@opennextjs/cloudflare` で Workers にデプロイ
 - Cloudflare Agents SDK (`agents`) の `Agent`（Durable Object）でルーム状態を管理・同期
 - TypeScript / Vitest（`@cloudflare/vitest-plugin`。旧名 `@cloudflare/vitest-pool-workers`）
+- UI：Tailwind CSS v4 ＋ shadcn/ui（Radix）。部品は `pnpm dlx shadcn@4 add <名前>` で `src/components/ui/` に足す（コピーした部品なので直してよい）。管理・司会は shadcn/ui、参加者は軽い部品だけ、投影・印刷は Tailwind で直接書く（ADR 0006）
 - パッケージ管理は **pnpm**（npm・yarn は使わない。`pnpm-lock.yaml` をコミットする）
 - 1つの Worker に Next.js と Agent を同居（カスタムエントリ `worker.ts`）
 
