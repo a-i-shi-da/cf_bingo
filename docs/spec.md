@@ -35,7 +35,7 @@ A の確定内容（#1〜#9）にもとづく。各フェーズは「Plan mode �
 | Phase | 内容 | 主な機能 | 終わりの条件 | 目安 |
 |---|---|---|---|---|
 | 1 | 企画書と土台 | — | #1〜#9 確定、ADR・テスト計画を作成 | 10/31 ✅ |
-| 2 | 雛形と疎通確認 | — | Next.js（OpenNext）＋ BingoRoom・RoomDirectory を1つの Worker で動かし、WebSocket の接続と `wrangler deploy` が通る。api.md 7章の確認事項と、無料プランの上限を確かめて文書に書き写す | 11/7 |
+| 2 | 雛形と疎通確認 | — | Next.js（OpenNext）＋ BingoRoom・RoomDirectory を1つの Worker で動かし、WebSocket の接続と `wrangler deploy` が通る。api.md 7章の確認事項と、無料プランの上限を確かめて文書に書き写す | 11/1 ✅ |
 | 3 | ゲームロジック | game-rules の全項目 | `src/lib/` の純粋関数（カード生成・抽選・判定・順位・途中参加のカード・参加コードの生成と正規化）の単体テストが通る | 11/11 |
 | 4 | BingoRoom | F-02, F-04〜F-11, F-14, F-15, F-17, F-18, F-20〜F-24 の処理 | api.md の callable・メッセージ・役割・試行回数の制限・自動削除が結合テストで通る | 11/18 |
 | 5 | RoomDirectory と管理画面 | F-01, F-16, F-19, F-40 | 合言葉で一覧・作成・削除・司会用 URL の作り直しができる | 11/21 |
