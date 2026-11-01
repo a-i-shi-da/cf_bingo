@@ -543,6 +543,17 @@ describe("RoomDirectory への通知と削除（F-15・F-18・F-19）", () => {
     await viewer.waitFor((f) => f.type === "room:deleted");
   });
 
+  it("つないだままの司会の操作（CSV の書き出しなど）も「使われた」に数える", async () => {
+    const room = await createRoom();
+    const host = await connectHost(room);
+    await room.stub.testAdvance(20 * 24 * 3600_000);
+    expect((await call(host, "exportResults")).ok).toBe(true);
+    await room.stub.testAdvance(20 * 24 * 3600_000);
+    await room.stub.checkExpiry();
+    expect(host.messages("room:deleted")).toHaveLength(0);
+    expect((await call(host, "listCodes", "all")).ok).toBe(true);
+  });
+
   it("手で削除：ゲーム中は ROOM_PLAYING。開始前・終了後は削除できる", async () => {
     const { room, host } = await startedRoom();
     await call(host, "start");

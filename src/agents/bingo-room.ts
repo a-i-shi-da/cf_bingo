@@ -327,7 +327,6 @@ export class BingoRoom extends Agent<Cloudflare.Env, RoomPublicState> {
     if (denied) return denied;
     if (this.state.status !== "waiting") return fail("NOT_WAITING");
     this.setState({ ...this.state, status: "playing", startedAt: this.now() });
-    this.touch();
     void this.notifyDirectory("changed");
     return { ok: true };
   }
@@ -403,7 +402,6 @@ export class BingoRoom extends Agent<Cloudflare.Env, RoomPublicState> {
       codes.push(code);
       this.insertCode(code, "unused", null, now);
     }
-    this.touch();
     this.broadcastHostCodes();
     return { ok: true, codes };
   }
@@ -448,7 +446,6 @@ export class BingoRoom extends Agent<Cloudflare.Env, RoomPublicState> {
         c.close(4003, "removed");
       }
     }
-    this.touch();
     this.refreshPublicState();
     this.broadcastHostCodes();
     this.queueHostParticipants();
@@ -472,7 +469,6 @@ export class BingoRoom extends Agent<Cloudflare.Env, RoomPublicState> {
         c.close(4003, "code replaced");
       }
     }
-    this.touch();
     this.broadcastHostCodes();
     this.queueHostParticipants();
     return { ok: true, code };
@@ -490,7 +486,6 @@ export class BingoRoom extends Agent<Cloudflare.Env, RoomPublicState> {
       this.sql`UPDATE bingo_codes SET status = 'revoked' WHERE code = ${row.code}`;
       this.broadcastHostCodes();
     }
-    this.touch();
     return { ok: true };
   }
 
@@ -540,12 +535,14 @@ export class BingoRoom extends Agent<Cloudflare.Env, RoomPublicState> {
     c.send(JSON.stringify(message));
   }
 
-  /** 司会の接続からの要求か（作り直す前のトークンで名乗った接続は認めない） */
+  /** 司会の接続からの要求か（作り直す前のトークンで名乗った接続は認めない）。認めたら、最後に使われた日時を更新する */
   private requireHost(): Failure | null {
     const room = this.room();
     if (!room) return fail("ROOM_NOT_FOUND");
     const st = this.currentConnection()?.state;
     if (st?.role !== "host" || st.hostTokenVersion !== room.host_token_version) return fail("FORBIDDEN");
+    // 司会の操作は「使われた」に数える（domain-model 7章）
+    this.touch();
     return null;
   }
 
