@@ -29,6 +29,8 @@ if [ -f package.json ]; then
   else
     npm install
   fi
+  echo "==> Installing Playwright Chromium and its system libraries (E2E tests)"
+  pnpm exec playwright install --with-deps chromium || echo "Playwright のインストールに失敗しました（E2E テストの前に再実行してください）"
 else
   echo "==> package.json not found; skipping dependency install"
 fi

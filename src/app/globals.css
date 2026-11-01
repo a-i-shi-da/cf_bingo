@@ -126,3 +126,8 @@
     @apply bg-background font-sans text-foreground;
   }
 }
+/* S-03 参加コード印刷：A4 縦。上下左右 8mm の余白（1枚の高さは 297-16=281mm） */
+@page {
+  size: A4;
+  margin: 8mm;
+}

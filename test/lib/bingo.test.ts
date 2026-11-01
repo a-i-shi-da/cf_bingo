@@ -277,3 +277,20 @@ describe("途中参加のカード（game-rules 7章）", () => {
     expect(generateLateJoinCard(drawAll(), seededRandom(1))).toBeNull();
   });
 });
+
+describe("画面の表示用", () => {
+  it("番号の列の文字と表記", async () => {
+    const { columnLetter, formatBall } = await import("../../src/lib/bingo");
+    expect([1, 15, 16, 30, 31, 45, 46, 60, 61, 75].map(columnLetter).join("")).toBe("BBIINNGGOO");
+    expect(formatBall(52)).toBe("G-52");
+  });
+
+  it("リーチの残りのマス（重なりは1つ）", async () => {
+    const { reachCells } = await import("../../src/lib/bingo");
+    expect(reachCells(CARD, [])).toEqual([]);
+    // 1行目と B列が両方 1 待ち → [0,0] が1つ
+    expect(reachCells(CARD, [16, 31, 46, 61, 2, 3, 4, 5])).toEqual([[0, 0]]);
+    // 中央の行（FREE＋3）→ 63 のマス
+    expect(reachCells(CARD, [3, 18, 48])).toEqual([[2, 4]]);
+  });
+});

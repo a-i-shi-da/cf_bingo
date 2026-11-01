@@ -198,3 +198,27 @@ export function generateLateJoinCard(
   });
   return fromColumns(columns);
 }
+
+/** 番号の列の文字（B・I・N・G・O） */
+export function columnLetter(n: number): string {
+  return "BINGO"[Math.min(4, Math.floor((n - 1) / 15))];
+}
+
+/** 画面に出す番号の表記（例：G-52） */
+export function formatBall(n: number): string {
+  return `${columnLetter(n)}-${n}`;
+}
+
+/**
+ * リーチのライン（あと1マスで揃うライン）の、残りのマス。
+ * 参加者画面で強調する（screens.md 6-2）。重なりは1つにまとめる
+ */
+export function reachCells(card: Card, drawn: Iterable<number>): [row: number, col: number][] {
+  const marked = markedCells(card, drawn);
+  const keys = new Set<string>();
+  for (const line of LINES) {
+    const open = line.filter(([r, c]) => !marked[r][c]);
+    if (open.length === 1) keys.add(`${open[0][0]},${open[0][1]}`);
+  }
+  return [...keys].map((k) => k.split(",").map(Number) as [number, number]);
+}
