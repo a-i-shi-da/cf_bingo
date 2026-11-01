@@ -4,7 +4,6 @@ import { useState } from "react";
 import { useAgent } from "agents/react";
 import { Button } from "@/components/ui/button";
 import type { BingoRoom } from "@/agents/bingo-room";
-import type { RoomDirectory } from "@/agents/room-directory";
 import type { RoomPublicState } from "@/agents/types";
 
 const TEST_ROOM = "phase2-test-room";
@@ -22,10 +21,6 @@ export function ConnectivityCheck() {
     onStateUpdate: (s) => setState(s),
     onOpen: () => setConnected(true),
     onClose: () => setConnected(false),
-  });
-  const directory = useAgent<RoomDirectory>({
-    agent: "RoomDirectory",
-    name: "main",
   });
 
   const run = async (label: string, fn: () => Promise<unknown>) => {
@@ -45,19 +40,6 @@ export function ConnectivityCheck() {
       <div className="flex flex-wrap gap-2">
         <Button variant="outline" onClick={() => run("ping", () => room.stub.ping())}>
           ping
-        </Button>
-        <Button variant="outline" onClick={() => run("whoami", () => room.stub.whoami())}>
-          whoami
-        </Button>
-        <Button variant="outline"
-          onClick={() => run("whoami(screen)", () => room.stub.whoami("screen"))}
-        >
-          役割を screen に
-        </Button>
-        <Button variant="outline"
-          onClick={() => run("directory.pingRoom", () => directory.stub.pingRoom(TEST_ROOM))}
-        >
-          RoomDirectory → BingoRoom
         </Button>
         <Button variant="outline"
           onClick={() =>

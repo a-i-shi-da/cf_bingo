@@ -46,6 +46,7 @@ type RoomPublicState = {
   participantCount: number;           // 参加人数（削除された人は数えない）
   reachCount: number;                 // リーチの人数（ビンゴ済みは数えない）
   winners: { nickname: string; rank: number; atSeq: number }[];  // ビンゴした人（順位順）
+  startedAt: number | null;           // 開始した時刻
   finishedAt: number | null;
   deleteAt: number | null;            // 終了後の削除予定（終了後だけ入る）
 };
@@ -105,7 +106,7 @@ type RoomPublicState = {
 - ニックネームの検索（F-09）は、`host:participants` を使って画面側で行う
 
 #### 4-3. RoomDirectory：合言葉が必要（管理画面 S-01）
-RoomDirectory は1つだけ（名前は固定）。どのメソッドも、毎回合言葉を引数で受け取って確かめる。
+RoomDirectory は1つだけ（名前は固定で `main`）。どのメソッドも、毎回合言葉を引数で受け取って確かめる。
 
 | メソッド | 引数 | 戻り値（成功時） | 主なエラー | 機能 |
 |---|---|---|---|---|
@@ -182,6 +183,7 @@ RoomDirectory は1つだけ（名前は固定）。どのメソッドも、毎�
   - 「読み取り専用の接続」（`shouldConnectionBeReadonly`）は、その接続から呼んだ callable の中の `setState` まで止めてしまうので使わない
 - **`/agents/bingo-room/<好きな名前>` に接続すると、その名前の Agent が作られてしまう**。Phase 4 で、RoomDirectory が作っていないルーム（初期化されていない BingoRoom）への接続・callable を拒否する。RoomDirectory も固定の名前（`main`）以外を拒否する
 - callable の中で投げた例外は、クライアントに `error` として返り、サーバーのログに `RPC error:` として出る。想定内のエラーは投げずに `{ ok: false, error }` を返す（4章の決まりどおり）
+- **`initialState` は、state がまだ保存されていない Agent でだけ使われる**。公開 state に項目を足しても、すでにあるルームには入らない（Phase 2 で確認）。本番にルームができたあとで項目を足すときは、`onStart` で足りない項目を補う
 - `@callable()` は TC39 標準のデコレーター。tsconfig は `target: ES2021` 以上にし、`experimentalDecorators` は使わない。Vitest（Vite 8）では `agents/vite` プラグインが必要
 
 ## 未決事項
@@ -192,4 +194,5 @@ RoomDirectory は1つだけ（名前は固定）。どのメソッドも、毎�
 - 2026-10-31 初版を確定
 - 2026-10-31 #9 の決定を反映：replaceParticipantCode・revokeCode・regenerateHostToken、メッセージ2種、エラー2種を追加
 - 2026-10-31 文書間の矛盾を修正：listCodes の all の範囲、司会トークンの作り直しの流れを明記
+- 2026-11-01 公開 state に startedAt を追加（domain-model.md の「公開」に合わせた）。RoomDirectory の名前（`main`）を明記
 - 2026-11-01 7章の確認結果を記入（Phase 2）。クライアントからの state の書き換えを拒否すること、初期化していないルームを拒否することを追記

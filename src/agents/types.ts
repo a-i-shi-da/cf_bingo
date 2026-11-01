@@ -10,6 +10,7 @@ export type RoomPublicState = {
   participantCount: number;
   reachCount: number;
   winners: { nickname: string; rank: number; atSeq: number }[];
+  startedAt: number | null;
   finishedAt: number | null;
   deleteAt: number | null;
 };

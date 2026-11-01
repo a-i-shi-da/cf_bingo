@@ -1,5 +1,5 @@
-import { Agent, callable, getCurrentAgent, type Connection } from "agents";
-import type { ConnectionState, RoomPublicState } from "./types";
+import { Agent, callable, type Connection } from "agents";
+import type { RoomPublicState } from "./types";
 
 /**
  * 1ルーム = 1インスタンス（名前 = roomId）。
@@ -15,6 +15,7 @@ export class BingoRoom extends Agent<Cloudflare.Env, RoomPublicState> {
     participantCount: 0,
     reachCount: 0,
     winners: [],
+    startedAt: null,
     finishedAt: null,
     deleteAt: null,
   };
@@ -26,29 +27,9 @@ export class BingoRoom extends Agent<Cloudflare.Env, RoomPublicState> {
     }
   }
 
-  // --- Phase 2：疎通確認用（Phase 4 で置き換える） ---
-
+  /** 疎通確認用（秘密の値を返さない）。Phase 4 で見直す */
   @callable()
   ping(): { ok: true; name: string; now: number } {
     return { ok: true, name: this.name, now: Date.now() };
-  }
-
-  /** 呼んだ接続を取り出し、役割の読み書きができることを確かめる */
-  @callable()
-  whoami(setRole?: ConnectionState["role"]): {
-    ok: true;
-    connectionId: string;
-    role: ConnectionState["role"];
-  } {
-    const { connection } = getCurrentAgent();
-    if (!connection) throw new Error("NO_CONNECTION");
-    const conn = connection as Connection<ConnectionState>;
-    if (setRole) conn.setState({ role: setRole });
-    return { ok: true, connectionId: conn.id, role: conn.state?.role ?? "guest" };
-  }
-
-  /** Agent どうしの呼び出し（RoomDirectory → BingoRoom）の確認用。DO RPC で呼ぶ */
-  async rpcPing(from: string): Promise<{ ok: true; room: string; from: string }> {
-    return { ok: true, room: this.name, from };
   }
 }
