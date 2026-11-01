@@ -46,6 +46,21 @@ game-rules.md の各項目を、そのままテストにする。
 
 - 乱数を使う関数は、乱数を外から渡せるようにして、結果を固定してテストする
 
+#### 2-1. 実装したテスト（Phase 3）
+- テストは `test/lib/*.test.ts`。乱数を固定する道具は `test/helpers/seeded-random.ts`（`seededRandom(seed)`）
+- 本番の乱数は `src/lib/random.ts` の `cryptoRandomInt`（`crypto.getRandomValues`。偏りが出ないよう端数を捨ててやり直す）
+
+| ファイル | 対象（`src/lib/`） |
+|---|---|
+| `bingo.test.ts` | `bingo.ts`：カード生成・抽選・マーク・ライン・リーチ・ビンゴと順位（`judgeAll`）・途中参加のカード（`generateLateJoinCard`） |
+| `join-code.test.ts` | `join-code.ts`（生成・正規化・表示用の区切り）、`ids.ts`（ルーム ID・司会トークン・参加者 ID） |
+| `validate.test.ts` | `validate.ts`：ニックネーム・ルーム名 |
+| `csv.test.ts` | `csv.ts`：BOM・CRLF・式の対策・クォート |
+
+- 順位：`judgeAll` には「これまでにビンゴした人数（削除された人も含む）」を渡す。Agent はこの人数を保存しておく（Phase 4）
+- 途中参加のカード：普通に作ってビンゴでないものを探し（100回まで）、なければ各ラインに未抽選の番号を1つずつ置いて作る。どこかの列の番号がすべて引かれていると、どう作ってもビンゴになるので `null` を返す
+- CSV の列の並びは Phase 4（`exportResults`）で決める。Phase 3 は書き出しの共通部分だけ
+
 ### 3. 結合テスト（Phase 4・5）
 api.md の callable・メッセージ・エラーを1つずつ確かめる。主なシナリオは次のとおり。
 
