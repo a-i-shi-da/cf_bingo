@@ -6,6 +6,7 @@ import { useAgent } from "agents/react";
 import type { RoomDirectory } from "@/agents/room-directory";
 import type { Failure, RoomEntry, RoomStatus } from "@/agents/types";
 import { errorMessage } from "@/lib/error-messages";
+import { ConnectionBanner } from "@/components/connection-banner";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -79,7 +80,8 @@ export function AdminConsole() {
       setPass(null);
       setRooms(null);
     }
-    setMessage(errorMessage(res.error));
+    // 管理画面で NOT_FOUND が返るのは、ルームが一覧にないとき
+    setMessage(res.error === "NOT_FOUND" ? "ルームが見つかりません。一覧を読み込み直してください" : errorMessage(res.error));
   }, []);
 
   const refresh = useCallback(
@@ -167,11 +169,9 @@ export function AdminConsole() {
 
   return (
     <main className="mx-auto w-full max-w-3xl space-y-6 p-4">
-      <header className="flex items-center justify-between gap-2">
+      <ConnectionBanner connected={connected} />
+      <header>
         <h1 className="text-2xl font-bold text-primary">ビンゴ大会 管理</h1>
-        <span className="text-sm text-muted-foreground" aria-live="polite">
-          {connected ? "● 接続中" : "○ 接続しています…"}
-        </span>
       </header>
 
       {message && (
@@ -268,7 +268,8 @@ export function AdminConsole() {
                         {STATUS_LABEL[room.status]}
                       </Badge>
                       <span className="text-sm text-muted-foreground">
-                        {room.deleteAt !== null ? `削除予定 ${formatDate(room.deleteAt)}` : `作成 ${formatDate(room.createdAt)}`}
+                        作成 {formatDate(room.createdAt)}
+                        {room.deleteAt !== null && ` ／ 削除予定 ${formatDate(room.deleteAt)}`}
                       </span>
                     </div>
                     <div className="mt-2 flex flex-wrap gap-2">

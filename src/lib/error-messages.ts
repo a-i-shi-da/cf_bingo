@@ -20,7 +20,7 @@ const MESSAGES: Partial<Record<ErrorCode, string>> = {
   ROOM_NOT_FOUND: "このルームは見つかりません",
   NO_NUMBERS_LEFT: "すべての番号を引きました",
   CODE_LIMIT: "これ以上発行できません（上限150枚）",
-  NOT_FOUND: "見つかりません。一覧を読み込み直してください",
+  NOT_FOUND: "参加者が見つかりません",
 };
 
 export function errorMessage(code: ErrorCode | string | undefined): string {

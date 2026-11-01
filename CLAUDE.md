@@ -19,6 +19,7 @@
 - `src/agents/room-directory.ts` — ルーム一覧の Agent（インスタンスは1つ。合言葉で守る）
 - `src/lib/` — 純粋関数（`bingo.ts` ゲームロジック、`join-code.ts` 参加コードの生成・正規化、`ids.ts` ルーム ID・司会トークン、`validate.ts` 入力チェック、`csv.ts` CSV、`random.ts` 暗号論的な乱数、`rate-limit.ts` 試行回数の制限、`results.ts` 結果の並びと CSV、`error-messages.ts` エラーコードの表示文）。乱数を使う関数は `RandomInt` を引数で受け取る。`utils.ts` は shadcn の `cn()`
 - `src/components/ui/` — shadcn/ui からコピーした部品
+- `src/components/` — 画面どうしで使い回す部品（`connection-banner.tsx`：切れて数秒たったら「再接続中…」の帯）
 - `src/app/` — `/`（管理：ルーム一覧・作成。`admin-console.tsx`）, `/host/[roomId]`（司会）, `/room/[roomId]`（参加者）, `/screen/[roomId]`（投影・表示のみ）
 
 ## コマンド

@@ -205,7 +205,7 @@ RoomDirectory は1つだけ（名前は固定で `main`）。どのメソッド�
 | `COOLDOWN` | 前の抽選から3秒たっていない | （何もしない。画面は残り時間を表示している） |
 | `NO_NUMBERS_LEFT` | 75個すべて引いた | すべての番号を引きました |
 | `CODE_LIMIT` | 参加コードが150枚を超える | これ以上発行できません（上限150枚） |
-| `NOT_FOUND` | 参加者・コードが見つからない | 参加者が見つかりません |
+| `NOT_FOUND` | 参加者・コード（司会画面）、ルーム（管理画面）が見つからない | 参加者が見つかりません／ルームが見つかりません。一覧を読み込み直してください |
 | `ROOM_NOT_FOUND` | ルームが初期化されていない（または削除済み） | このルームは見つかりません |
 | `ALREADY_INITIALIZED` | 初期化済みのルームを初期化しようとした（Agent どうしの呼び出しだけ） | — |
 | `INVALID_ARGUMENT` | 引数の形が違う（枚数が整数でない、など） | — |
@@ -244,3 +244,4 @@ RoomDirectory は1つだけ（名前は固定で `main`）。どのメソッド�
 - 2026-11-01 Phase 4 の実装に合わせて追記：`room:not-found`、接続を切るときのコード、Agent どうしの呼び出し（4-4）、戻り値の形、エラー（`ROOM_NOT_FOUND` `ALREADY_INITIALIZED` `INVALID_ARGUMENT`、各メソッドの `ROOM_FINISHED` `RATE_LIMITED`）、`join` で確かめる順番、CSV の列、放置ルームの確認の予約のしかた
 - 2026-11-01 文書との食い違いを修正：`player:self`・`host:participants`・`host:codes` の送るきっかけと中身を実装に合わせた。放置ルームの削除予定の扱い（5-2）を 5-3 に合わせた
 - 2026-11-01 Phase 5 の実装に合わせて 4-3 を追記：listRooms の戻り値、`deleteRoom` の `NOT_FOUND`、`RATE_LIMITED`、司会用 URL の作り方、削除予定日の範囲、確認用のルーム名の比べ方、`main` 以外の拒否
+- 2026-11-01 `NOT_FOUND` の意味に、管理画面でルームが見つからない場合を追加
