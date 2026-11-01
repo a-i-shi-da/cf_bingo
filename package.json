@@ -12,7 +12,8 @@
     "lint": "eslint",
     "typecheck": "tsc --noEmit && tsc --noEmit -p test",
     "cf-typegen": "wrangler types --env-interface CloudflareEnv cloudflare-env.d.ts",
-    "test:e2e": "playwright test"
+    "test:e2e": "playwright test",
+    "load-test": "node --experimental-strip-types --disable-warning=ExperimentalWarning load/load-test.mts"
   },
   "dependencies": {
     "agents": "^0.32.0",

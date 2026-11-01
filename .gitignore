@@ -27,3 +27,6 @@ coverage/
 /playwright-report/
 /blob-report/
 /playwright/.cache/
+
+# 負荷試験の記録（結果は docs/test-plan.md に書き写す）
+/load/results/
