@@ -16,6 +16,7 @@
 - コマンド：`pnpm run deploy`（`opennextjs-cloudflare build && opennextjs-cloudflare deploy`）。`run` を省くと pnpm 自身の `deploy` が動く
 - ログイン：`pnpm wrangler login`（devcontainer の `~/.config/.wrangler` に保存。コンテナを作り直しても残る）
 - 初回デプロイ（2026-11-01、Version ID `1808c066-883e-460f-9242-ac2d721929b2`）：Worker 約 7.0 MiB（gzip 約 1.4 MiB）、起動時間 58ms
+- Phase 7 の負荷試験の前のデプロイ（2026-11-01、Version ID `0a6470c8-5401-4b7e-8a9c-0435ed1c2899`）：Worker 約 7.9 MiB（gzip 約 1.6 MiB）、起動時間 60ms
 
 ## 未決事項
 - [ ] dev／prod の環境

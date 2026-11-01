@@ -3,7 +3,8 @@
 //   pnpm load-test                                  … 手元の pnpm preview（http://localhost:8787）に向けて
 //   pnpm load-test https://bingo.example.workers.dev … Cloudflare 上の Worker に向けて
 //
-// 管理画面の合言葉は、環境変数 LOAD_ADMIN_PASSPHRASE か .dev.vars の ADMIN_PASSPHRASE から読む（表示しない）。
+// 管理画面の合言葉は、環境変数 LOAD_ADMIN_PASSPHRASE か、ファイルの ADMIN_PASSPHRASE から読む（表示しない）。
+// ファイルは、手元（localhost）に向けるときは .dev.vars、それ以外（Cloudflare 上）は .dev.vars.production（どちらもコミットしない）。
 // すべての接続を1つのプロセスで動かすので、「抽選を送った時刻」と「各接続が受け取った時刻」を同じ時計で測れる。
 // 試験用のルームは最後に削除する。
 import { readFileSync, mkdirSync, writeFileSync } from "node:fs";
@@ -29,11 +30,15 @@ const JOIN_CONCURRENCY = 10;
 
 // ───────────────────────── 道具
 
+/** 合言葉を読むファイル（本番の合言葉は手元の開発用と違うので、別のファイルにする） */
+const VARS_FILE =
+  process.env.LOAD_VARS_FILE ?? (/^https?:\/\/(localhost|127\.0\.0\.1)(:|\/|$)/.test(BASE_URL) ? ".dev.vars" : ".dev.vars.production");
+
 function passphrase(): string {
   const fromEnv = process.env.LOAD_ADMIN_PASSPHRASE;
   if (fromEnv) return fromEnv;
   try {
-    const line = readFileSync(".dev.vars", "utf8")
+    const line = readFileSync(VARS_FILE, "utf8")
       .split(/\r?\n/)
       .find((l) => l.startsWith("ADMIN_PASSPHRASE="));
     const value = line?.slice("ADMIN_PASSPHRASE=".length).trim().replace(/^"(.*)"$/, "$1");
@@ -41,7 +46,7 @@ function passphrase(): string {
   } catch {
     // 下で知らせる
   }
-  throw new Error("合言葉がありません。LOAD_ADMIN_PASSPHRASE か .dev.vars の ADMIN_PASSPHRASE を設定してください");
+  throw new Error(`合言葉がありません。${VARS_FILE} に ADMIN_PASSPHRASE=… を書くか、LOAD_ADMIN_PASSPHRASE を設定してください`);
 }
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));

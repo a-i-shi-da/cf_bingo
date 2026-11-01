@@ -28,6 +28,7 @@
 - `pnpm dev` — Next.js だけ（画面の見た目の確認用。Agent にはつながらない）
 - `pnpm preview` — OpenNext でビルドして、Worker 全体（画面＋Agent）を :8787 で動かす
 - `pnpm test` — Vitest（workerd 上）
+- `pnpm load-test [URL]` — 負荷試験（`load/load-test.mts`。110接続・抽選75回）。URL を省くと手元の :8787。本番に向けるときの合言葉は `.dev.vars.production`（コミットしない。docs/test-plan.md 5章）
 - `pnpm test:e2e` — Playwright（`e2e/`）。`pnpm preview` を自動で起動し、合言葉は `.dev.vars` から読む（docs/test-plan.md 4章）
 - `pnpm typecheck` / `pnpm lint`
 - `pnpm run deploy` — ビルドして Cloudflare にデプロイ（**本番当日はしない**。実行前にユーザーに確認する）。`run` を省くと pnpm 自身の `deploy` コマンドが動くので必ず付ける
