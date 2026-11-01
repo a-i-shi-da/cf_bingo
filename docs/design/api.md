@@ -228,6 +228,9 @@ RoomDirectory は1つだけ（名前は固定で `main`）。どのメソッド�
 - **`/agents/bingo-room/<好きな名前>` に接続すると、その名前の Agent が作られてしまう**。BingoRoom は、RoomDirectory が作っていないルーム（初期化されていない BingoRoom）への接続・callable を拒否する（Phase 4 で実装）。RoomDirectory も固定の名前（`main`）以外を拒否する（Phase 5）
 - callable の中で投げた例外は、クライアントに `error` として返り、サーバーのログに `RPC error:` として出る。想定内のエラーは投げずに `{ ok: false, error }` を返す（4章の決まりどおり）
 - **`initialState` は、state がまだ保存されていない Agent でだけ使われる**。公開 state に項目を足しても、すでにあるルームには入らない（Phase 2 で確認）。本番にルームができたあとで項目を足すときは、`onStart` で足りない項目を補う
+- **ルームの削除に使う Agents SDK の `destroy()` は、データを消したあと `ctx.abort("destroyed")` で自分のインスタンスを止める**（SDK の決まった動き）。そのため
+  - workerd のログに `uncaught exception ... broken.outputGateBroken; jsg.Error: destroyed` が出る（削除1回につき2行ほど）。エラーではない。`pnpm test` でも、ルームを消すテストで出る（Phase 4 から）
+  - 削除を呼んだ側（RoomDirectory の `deleteRoom`、テスト）には応答が返らず例外になることがある。RoomDirectory は例外のときにルームが消えたか（`exists`）を確かめてから一覧から外す。テストは `.catch(() => {})` で受ける
 - `@callable()` は TC39 標準のデコレーター。tsconfig は `target: ES2021` 以上にし、`experimentalDecorators` は使わない。Vitest（Vite 8）では `agents/vite` プラグインが必要
 
 ## 未決事項
@@ -245,3 +248,4 @@ RoomDirectory は1つだけ（名前は固定で `main`）。どのメソッド�
 - 2026-11-01 文書との食い違いを修正：`player:self`・`host:participants`・`host:codes` の送るきっかけと中身を実装に合わせた。放置ルームの削除予定の扱い（5-2）を 5-3 に合わせた
 - 2026-11-01 Phase 5 の実装に合わせて 4-3 を追記：listRooms の戻り値、`deleteRoom` の `NOT_FOUND`、`RATE_LIMITED`、司会用 URL の作り方、削除予定日の範囲、確認用のルーム名の比べ方、`main` 以外の拒否
 - 2026-11-01 `NOT_FOUND` の意味に、管理画面でルームが見つからない場合を追加
+- 2026-11-01 7章に、`destroy()` がインスタンスを止めることと、そのときのログ（`outputGateBroken`）を追記
