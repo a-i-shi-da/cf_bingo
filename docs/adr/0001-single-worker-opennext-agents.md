@@ -16,3 +16,5 @@
 ## 影響
 - OpenNext の生成物（`.open-next/worker.js`）を取り込むカスタムエントリが必要になる。OpenNext の更新で作り方が変わる可能性があるため、Phase 2 で最初に動作を確かめる
 - 画面の不具合を直すデプロイで、Agent も一緒に更新される。本番当日はデプロイしない（operations.md）
+- （2026-11-01 Phase 2 で確認）カスタムエントリは、`.open-next/worker.js` の default export の `fetch` を呼ぶ形で動いた。`pnpm preview` で、画面と `/agents/*` の WebSocket が同じ Worker で動くことを確かめた
+- テストは OpenNext の生成物に頼らないよう、Agent だけを export するテスト用エントリ（`test/worker.ts`）を使う

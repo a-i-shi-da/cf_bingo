@@ -7,7 +7,7 @@
 
 ## 決定済み
 - テストは4段階：単体 → 結合 → E2E → 負荷試験・実機リハーサル
-- 単体・結合テストは Vitest で行う。結合テストは `@cloudflare/vitest-pool-workers` を使い、本番と同じ workerd 上で Agent を動かす
+- 単体・結合テストは Vitest で行う。結合テストは `@cloudflare/vitest-plugin`（旧名 `@cloudflare/vitest-pool-workers`）を使い、本番と同じ workerd 上で Agent を動かす
 - E2E テストは Playwright で行う（複数のブラウザのタブで、司会・投影・参加者を同時に動かす）
 - 各フェーズは、そのフェーズのテストが通ったらコミットする
 
@@ -17,10 +17,17 @@
 | 段階 | 道具 | 対象 | 実施するフェーズ |
 |---|---|---|---|
 | 単体 | Vitest | `src/lib/` の純粋関数（ゲームロジック・参加コード・入力チェック・CSV） | 3 |
-| 結合 | Vitest ＋ `@cloudflare/vitest-pool-workers` | BingoRoom・RoomDirectory の callable、メッセージ、役割、制限、自動削除 | 4・5 |
+| 結合 | Vitest ＋ `@cloudflare/vitest-plugin` | BingoRoom・RoomDirectory の callable、メッセージ、役割、制限、自動削除 | 4・5 |
 | E2E | Playwright | 画面の操作の流れ（司会・投影・参加者を同時に） | 6 |
 | 負荷試験 | WebSocket を大量に張るスクリプト（Node.js） | 110接続での反映時間・通信量・取りこぼし | 7 |
 | 実機リハーサル | 本物のスマホ・投影用PC | 参加にかかる時間、見やすさ、会場の回線 | 7 |
+
+### 1-1. テストの土台（Phase 2）
+- `pnpm test` で `test/**/*.test.ts` と `src/**/*.test.ts` を workerd 上で実行する（`vitest.config.mts`）
+- テスト用のエントリ `test/worker.ts` は Agent だけを export する（OpenNext のビルドなしでテストできる）
+- WebSocket で Agent につなぐ道具：`test/helpers/agent-socket.ts`（`connectAgent(agent, name)` → `call()`・`waitFor()`）
+- ハイバネーションは `cloudflare:test` の `evictDurableObject(stub, { webSockets: "hibernate" })` で再現できる
+- `test/smoke.test.ts`：接続・callable・役割の記録・ハイバネーション後の役割・クライアントからの state 書き換えの拒否・Agent どうしの呼び出し
 
 ### 2. 単体テスト（Phase 3）
 game-rules.md の各項目を、そのままテストにする。

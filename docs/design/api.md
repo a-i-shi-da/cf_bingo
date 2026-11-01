@@ -166,13 +166,23 @@ RoomDirectory は1つだけ（名前は固定）。どのメソッドも、毎�
 | `CODE_LIMIT` | 参加コードが150枚を超える | これ以上発行できません（上限150枚） |
 | `NOT_FOUND` | 参加者が見つからない | 参加者が見つかりません |
 
-### 7. 実装の前に確かめること（Phase 2）
-公式ドキュメントで次の点を確かめ、違っていたらこの文書を直す。
-- 公開 state の配信（`setState`）を、接続ごとに止める必要がないこと（今回は全員に同じものを送るので止めない想定）
-- `connection.setState` で記録した役割が、Agent が休止（ハイバネーション）から戻ったあとも残ること
-- `@callable()` のメソッドから、呼んだ接続（connection）を取り出す方法
-- Agent どうしの呼び出し（RoomDirectory → BingoRoom）の方法
-- Agent のデータをすべて消す方法（削除のとき）
+### 7. 実装の前に確かめること（Phase 2・確認済み）
+2026-11-01 に `agents` 0.32.0 の公式ドキュメント（パッケージ同梱の `docs/`）とスモークテスト（`test/smoke.test.ts`）で確かめた。
+
+| 確かめたこと | 結果 | 確かめ方 |
+|---|---|---|
+| 公開 state の配信を接続ごとに止める必要がないか | 止めなくてよい。止めたい場合は `shouldSendProtocolMessages(connection, ctx)` で接続ごとに外せる（今回は使わない） | ドキュメント |
+| `connection.setState` の役割がハイバネーション後も残るか | 残る（WebSocket の attachment に保存される） | テスト（`evictDurableObject` で追い出してから読み直す） |
+| `@callable()` から呼んだ接続を取り出す方法 | `getCurrentAgent()` が `{ agent, connection, request }` を返す | テスト |
+| Agent どうしの呼び出し | `getAgentByName(this.env.BingoRoom, roomId)` で取ったスタブのメソッドを直接呼ぶ（Durable Object の RPC。`@callable()` は不要） | テスト |
+| Agent のデータをすべて消す方法 | `this.destroy()`。テーブル・アラーム・ストレージを消し、`ctx.abort()` で追い出す（ログにエラーが1行出るが正常） | ドキュメント（Phase 4 でテストする） |
+
+#### わかった注意点（実装で守ること）
+- **公開 state は、既定ではクライアントからも書き換えられる**（`useAgent` の `setState`）。BingoRoom では `validateStateChange(next, source)` で `source !== "server"` を拒否する（実装済み・テスト済み）。RoomDirectory は公開 state を使わない
+  - 「読み取り専用の接続」（`shouldConnectionBeReadonly`）は、その接続から呼んだ callable の中の `setState` まで止めてしまうので使わない
+- **`/agents/bingo-room/<好きな名前>` に接続すると、その名前の Agent が作られてしまう**。Phase 4 で、RoomDirectory が作っていないルーム（初期化されていない BingoRoom）への接続・callable を拒否する。RoomDirectory も固定の名前（`main`）以外を拒否する
+- callable の中で投げた例外は、クライアントに `error` として返り、サーバーのログに `RPC error:` として出る。想定内のエラーは投げずに `{ ok: false, error }` を返す（4章の決まりどおり）
+- `@callable()` は TC39 標準のデコレーター。tsconfig は `target: ES2021` 以上にし、`experimentalDecorators` は使わない。Vitest（Vite 8）では `agents/vite` プラグインが必要
 
 ## 未決事項
 - [x] URL の `?t=` `?c=` → #9 で決定（読み取ったらすぐアドレスバーから消す）
@@ -182,3 +192,4 @@ RoomDirectory は1つだけ（名前は固定）。どのメソッドも、毎�
 - 2026-10-31 初版を確定
 - 2026-10-31 #9 の決定を反映：replaceParticipantCode・revokeCode・regenerateHostToken、メッセージ2種、エラー2種を追加
 - 2026-10-31 文書間の矛盾を修正：listCodes の all の範囲、司会トークンの作り直しの流れを明記
+- 2026-11-01 7章の確認結果を記入（Phase 2）。クライアントからの state の書き換えを拒否すること、初期化していないルームを拒否することを追記
