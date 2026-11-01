@@ -1,6 +1,23 @@
+# dependencies
 node_modules/
+.pnpm-store/
+.pnpm-debug.log*
+
+# next.js / opennext / wrangler
 .next/
 .open-next/
 .wrangler/
+out/
+*.tsbuildinfo
+next-env.d.ts
+
+# secrets
 .dev.vars
+.dev.vars.*
+!.dev.vars.example
 .env*
+
+# misc
+.DS_Store
+*.pem
+coverage/

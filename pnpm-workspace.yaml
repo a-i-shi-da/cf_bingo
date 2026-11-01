@@ -1,0 +1,7 @@
+# インストール時のビルドスクリプトを許可するパッケージ（pnpm 10 は既定で止める）
+onlyBuiltDependencies:
+  - esbuild
+  - workerd
+  - sharp
+ignoredBuiltDependencies:
+  - unrs-resolver

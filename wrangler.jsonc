@@ -1,0 +1,28 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "bingo",
+  // カスタムエントリ：/agents/* は Agent へ、それ以外は OpenNext へ（ADR 0001）
+  "main": "worker.ts",
+  "compatibility_date": "2026-10-25",
+  "compatibility_flags": ["nodejs_compat", "global_fetch_strictly_public"],
+  "assets": {
+    "directory": ".open-next/assets",
+    "binding": "ASSETS"
+  },
+  "services": [
+    // OpenNext のキャッシュ再検証などで自分自身を呼ぶためのバインディング
+    { "binding": "WORKER_SELF_REFERENCE", "service": "bingo" }
+  ],
+  "durable_objects": {
+    "bindings": [
+      { "name": "BingoRoom", "class_name": "BingoRoom" },
+      { "name": "RoomDirectory", "class_name": "RoomDirectory" }
+    ]
+  },
+  // 無料プランは SQLite 型の Durable Object だけが使える
+  "migrations": [
+    { "tag": "v1", "new_sqlite_classes": ["BingoRoom", "RoomDirectory"] }
+  ],
+  // 当日のエラーをあとから調べられるようにする（non-functional 7章）
+  "observability": { "enabled": true }
+}
