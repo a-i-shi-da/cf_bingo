@@ -108,12 +108,19 @@ export function PrintSheet({ roomId }: { roomId: string }) {
               {page.map((c) => (
                 <article
                   key={c.code}
-                  className="flex flex-col items-center justify-center gap-[1.5mm] border border-dashed border-neutral-500 p-[3mm] text-center"
+                  className="flex flex-col items-center justify-center gap-[1mm] border border-dashed border-neutral-500 px-[3mm] py-[2mm] text-center *:shrink-0"
                 >
-                  <p className="w-full truncate text-[11pt] font-bold">{name}</p>
-                  <QRCodeSVG value={`${origin}/room/${roomId}?c=${c.code}`} size={110} level="M" marginSize={1} />
-                  <p className="text-[8pt]">参加コード</p>
-                  <p className="font-mono text-[18pt] font-black tracking-widest">{formatJoinCode(c.code)}</p>
+                  {/* 長いルーム名は文字を小さくして折り返す（ROOM_NAME_MAX＝40文字でも収まる） */}
+                  <p className={`line-clamp-3 w-full font-bold leading-tight break-words ${nameSize(name)}`}>{name}</p>
+                  <QRCodeSVG value={`${origin}/room/${roomId}?c=${c.code}`} size={96} level="M" marginSize={1} />
+                  {/* 見出しとコードを1行にして高さを節約する。「使用済み」は見出しの下に小さく */}
+                  <div className="flex items-center gap-[1.5mm]">
+                    <p className="flex flex-col text-[8pt] leading-tight">
+                      <span>参加コード</span>
+                      {c.status === "used" && <span className="text-[7pt] text-neutral-500">（使用済み）</span>}
+                    </p>
+                    <p className="font-mono text-[18pt] leading-tight font-black tracking-widest">{formatJoinCode(c.code)}</p>
+                  </div>
                   <p className="text-[7pt] leading-tight">
                     QR が読めないときは
                     <br />
@@ -121,8 +128,7 @@ export function PrintSheet({ roomId }: { roomId: string }) {
                     <br />
                     を開いてコードを入力
                   </p>
-                  <p className="text-[7pt] font-bold">この紙はなくさないでください（端末を変えたときに使います）</p>
-                  {c.status === "used" && <p className="text-[7pt] text-neutral-500">（使用済み）</p>}
+                  <p className="text-[7pt] leading-tight font-bold">この紙はなくさないでください（端末を変えたときに使います）</p>
                 </article>
               ))}
             </section>
@@ -131,6 +137,13 @@ export function PrintSheet({ roomId }: { roomId: string }) {
       )}
     </div>
   );
+}
+
+/** ルーム名の文字の大きさ（1枚の幅は約58mm。短い名前は大きく1行、長い名前は小さくして3行まで） */
+function nameSize(name: string): string {
+  if (name.length <= 14) return "text-[11pt]";
+  if (name.length <= 30) return "text-[9pt]";
+  return "text-[8pt]";
 }
 
 function chunk<T>(items: T[], size: number): T[][] {
