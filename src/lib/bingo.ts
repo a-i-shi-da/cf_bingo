@@ -3,6 +3,8 @@ import { cryptoRandomInt, shuffle, type RandomInt } from "./random";
 
 export const SIZE = 5;
 export const MAX_NUMBER = 75;
+/** 投影画面の抽選の演出（ドラムロール）の長さ。参加者画面はこの間、新しい番号を出さずに待つ */
+export const DRAW_REVEAL_MS = 2500;
 /** カードの中央（FREE）を表す値 */
 export const FREE = 0;
 const CENTER = 2;

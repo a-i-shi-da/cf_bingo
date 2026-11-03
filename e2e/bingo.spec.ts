@@ -92,6 +92,25 @@ test("再接続：オフラインの間に引いた番号が、戻ったとき�
   await player.context.close();
 });
 
+test("演出の間：参加者画面は、投影画面のドラムロールが終わるまで新しい番号を出さない", async ({ page, browser }) => {
+  const { roomId, hostUrl } = await createRoom(page, "E2E 演出の間");
+  await page.goto(hostUrl);
+  const [code] = await issueCodes(page, 1);
+  const player = await joinAsPlayer(browser, roomId, code, "つばさ");
+  await page.getByRole("button", { name: "開始" }).click();
+  await expect(player.page.getByText(/抽選 0回/)).toBeVisible();
+
+  await draw(page);
+  // 司会画面には出ているが、参加者画面はまだ前のまま（演出は 2.5秒）
+  await expect(player.page.getByText(/抽選 0回/)).toBeVisible();
+  await expect(player.page.locator("[data-marked]")).toHaveCount(1); // FREE だけ
+  await page.waitForTimeout(1000);
+  await expect(player.page.getByText(/抽選 0回/)).toBeVisible();
+  // 演出が終わると出る
+  await expect(player.page.getByText(/抽選 1回/)).toBeVisible({ timeout: 5_000 });
+  await player.context.close();
+});
+
 test("開き直し：同じブラウザでも別のブラウザでも、同じカードに戻る", async ({ page, browser }) => {
   const { roomId, hostUrl } = await createRoom(page, "E2E 開き直し");
   await page.goto(hostUrl);

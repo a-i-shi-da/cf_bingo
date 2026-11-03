@@ -3,7 +3,7 @@
 // S-04 参加者画面（docs/design/screens.md 6章）。軽い部品だけで作る（ADR 0006）
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { ErrorCode, PlayerSelf, RoomPublicState, Winner } from "@/agents/types";
-import { FREE, formatBall, markedCells, reachCells, type Card } from "@/lib/bingo";
+import { DRAW_REVEAL_MS, FREE, formatBall, markedCells, reachCells, type Card } from "@/lib/bingo";
 import { celebratedStore, joinCodeStore, takeUrlParam } from "@/lib/client-storage";
 import { errorMessage } from "@/lib/error-messages";
 import { formatJoinCode, normalizeJoinCode } from "@/lib/join-code";
@@ -27,8 +27,11 @@ export function PlayerScreen({ roomId }: { roomId: string }) {
   /** 起動時に URL や保存から読んだコード（最初につながったときに使う） */
   const initialCodeRef = useRef<{ code: string | null; fromUrl: boolean } | null>(null);
 
-  const applySelf = (s: PlayerSelf) =>
+  const applySelfNow = (s: PlayerSelf) =>
     setSelf((prev) => (s.card ? (s as Self) : prev ? { ...prev, ...s, card: prev.card } : prev));
+  const reveal = useDelayedReveal(applySelfNow);
+  /** 抽選の演出中は、リーチ・ビンゴの知らせも番号と一緒に出す */
+  const applySelf = reveal.applySelf;
 
   const resume = async (agent: RoomAgent, code: string): Promise<AuthResult> =>
     (await agent.stub.resume(code)) as AuthResult;
@@ -60,7 +63,8 @@ export function PlayerScreen({ roomId }: { roomId: string }) {
     setPhase("form");
   };
 
-  const { agent, state, connected, ended } = useBingoRoom(roomId, {
+  const { agent, state: received, connected, ended } = useBingoRoom(roomId, {
+    onState: reveal.onState,
     onOpen: (a) => {
       if (codeRef.current) {
         // 再接続：同じコードで名乗り直す
@@ -111,13 +115,14 @@ export function PlayerScreen({ roomId }: { roomId: string }) {
     }
   };
 
+  const state = reveal.state;
   if (ended) return <Message text={END_TEXT[ended]} />;
 
   return (
     <main className="mx-auto min-h-dvh w-full max-w-md px-4 pt-4 pb-10">
       <ConnectionBanner connected={connected} />
       {phase === "joined" && self && state ? (
-        <CardView roomId={roomId} state={state} self={self} connected={connected} />
+        <CardView roomId={roomId} state={state} self={self} connected={connected} receivedCount={received?.drawn.length ?? 0} />
       ) : phase === "form" && state ? (
         <JoinForm
           roomName={state.name}
@@ -210,7 +215,8 @@ function JoinForm(props: {
 }
 
 /** 6-2 カード */
-function CardView({ roomId, state, self, connected }: { roomId: string; state: RoomPublicState; self: Self; connected: boolean }) {
+function CardView(props: { roomId: string; state: RoomPublicState; self: Self; connected: boolean; receivedCount: number }) {
+  const { roomId, state, self, connected } = props;
   const drawn = state.drawn;
   const last = drawn.at(-1) ?? null;
   const marked = useMemo(() => markedCells(self.card, drawn), [self.card, drawn]);
@@ -218,7 +224,8 @@ function CardView({ roomId, state, self, connected }: { roomId: string; state: R
     () => new Set((self.bingoRank === null ? reachCells(self.card, drawn) : []).map(([r, c]) => `${r},${c}`)),
     [self.card, drawn, self.bingoRank],
   );
-  const missed = useMissedWhileOffline(connected, drawn.length);
+  // 演出待ちの番号は受け取り済みなので、表示した数ではなく受け取った数で比べる
+  const missed = useMissedWhileOffline(connected, props.receivedCount);
   // ビンゴになったら（切れている間になっていた場合も）お祝い表示を出す。閉じたら、開き直しても出さない
   const [dismissed, setDismissed] = useState(() => celebratedStore.get(roomId));
   const celebrate = self.bingoRank !== null && !dismissed;
@@ -382,4 +389,60 @@ function useMissedWhileOffline(connected: boolean, drawnCount: number): number {
     return () => clearTimeout(timer);
   }, [missed]);
   return missed;
+}
+
+/**
+ * 新しい番号は、投影画面のドラムロールが終わってから出す（screens.md 6-2）。
+ * 1つだけ増えた state を受け取ったら DRAW_REVEAL_MS のあいだ表示を止め、その間に届いた
+ * state と自分の情報（リーチ・ビンゴ）もためておいて、まとめて出す。
+ * 最初に開いたとき・切れている間に2つ以上進んでいたときは待たずに出す（投影画面と同じ）。
+ */
+function useDelayedReveal(applySelfNow: (s: PlayerSelf) => void) {
+  const [state, setState] = useState<RoomPublicState | null>(null);
+  const shownCount = useRef<number | null>(null);
+  const pending = useRef<{ state: RoomPublicState; selves: PlayerSelf[]; timer: ReturnType<typeof setTimeout> } | null>(null);
+  const applySelfRef = useRef(applySelfNow);
+  useEffect(() => {
+    applySelfRef.current = applySelfNow;
+  });
+
+  const show = (s: RoomPublicState) => {
+    shownCount.current = s.drawn.length;
+    setState(s);
+  };
+  const flush = () => {
+    const p = pending.current;
+    if (!p) return;
+    clearTimeout(p.timer);
+    pending.current = null;
+    show(p.state);
+    p.selves.forEach((s) => applySelfRef.current(s));
+  };
+
+  const onState = (s: RoomPublicState) => {
+    const p = pending.current;
+    if (p) {
+      // 演出中に届いた同じ回の state（参加人数の変化・終了など）は、演出のあとに出す
+      if (s.drawn.length === p.state.drawn.length) {
+        p.state = s;
+        return;
+      }
+      flush();
+    }
+    const shown = shownCount.current;
+    if (shown !== null && s.status === "playing" && s.drawn.length === shown + 1) {
+      pending.current = { state: s, selves: [], timer: setTimeout(flush, DRAW_REVEAL_MS) };
+      return;
+    }
+    show(s);
+  };
+
+  const applySelf = (s: PlayerSelf) => {
+    if (pending.current) pending.current.selves.push(s);
+    else applySelfRef.current(s);
+  };
+
+  useEffect(() => () => clearTimeout(pending.current?.timer), []);
+
+  return { state, onState, applySelf };
 }

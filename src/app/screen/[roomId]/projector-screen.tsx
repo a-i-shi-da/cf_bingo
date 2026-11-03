@@ -3,13 +3,13 @@
 // S-05 投影画面（docs/design/screens.md 7章）。表示だけで、操作はしない。Tailwind で直接書く（ADR 0006）
 import { useEffect, useRef, useState } from "react";
 import type { RoomPublicState, Winner } from "@/agents/types";
-import { MAX_NUMBER, columnLetter, formatBall } from "@/lib/bingo";
+import { DRAW_REVEAL_MS, MAX_NUMBER, columnLetter, formatBall } from "@/lib/bingo";
 import { ConnectionBanner } from "@/components/connection-banner";
 import { END_TEXT, useBingoRoom } from "@/hooks/use-bingo-room";
 import { Sounds } from "./sounds";
 
-/** 抽選の演出の長さ（約3秒。番号が決まるまでの切り替え＋決まった表示） */
-const ROLL_MS = 2500;
+/** 抽選の演出の長さ（番号が決まるまでの切り替え。参加者画面もこの間は新しい番号を出さない） */
+const ROLL_MS = DRAW_REVEAL_MS;
 /** ビンゴの特別な演出を出しておく長さ */
 const BINGO_MS = 7000;
 
