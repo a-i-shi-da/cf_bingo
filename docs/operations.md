@@ -20,6 +20,7 @@
 - Phase 7 の負荷試験の前のデプロイ（2026-11-01、Version ID `0a6470c8-5401-4b7e-8a9c-0435ed1c2899`）：Worker 約 7.9 MiB（gzip 約 1.6 MiB）、起動時間 60ms
 - 参加者画面の演出待ち・favicon・OGP を入れたデプロイ（2026-11-03、Version ID `f1b50967-ba1e-482d-a23d-65128005c28f`）
 - 参加コード印刷の配置の修正を入れたデプロイ（2026-11-03、Version ID `8fbe990d-50b7-4f87-abb8-1aa6a4d7b176`）
+- 本番の URL を `.env.production.local` の `SITE_URL` から読むようにしたデプロイ（2026-11-05、Version ID `5c15f76a-d1c7-45b6-ba61-21c3480b0029`）：Worker 約 8.1 MiB（gzip 約 1.7 MiB）、起動時間 61ms
 
 ## 未決事項
 - [ ] dev／prod の環境
