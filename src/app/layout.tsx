@@ -1,9 +1,12 @@
 import type { Metadata } from "next";
 import "./globals.css";
 
+// OG 画像（src/app/opengraph-image.png）の URL を絶対 URL にするための基準。
+// 本番の URL はリポジトリに書かず、ビルド時に .env.production.local の SITE_URL から読む（docs/operations.md）
+const siteUrl = process.env.SITE_URL || "http://localhost:8787";
+
 export const metadata: Metadata = {
-  // OG 画像（src/app/opengraph-image.png）の URL を絶対 URL にするための基準（docs/operations.md の本番 URL）
-  metadataBase: new URL("https://bingo.example.workers.dev"),
+  metadataBase: new URL(siteUrl),
   title: "ビンゴ大会",
   description: "会場イベント向けリアルタイムビンゴ",
   openGraph: {
